@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('brand');
             $table->string('model')->nullable();
             $table->string('color')->nullable();
-            $table->strinf('serial')->nullable();
+            $table->string('serial')->nullable();
             $table->string('location')->nullable();
 
             $table->timestamps();
