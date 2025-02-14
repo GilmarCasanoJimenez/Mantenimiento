@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('networks', function (Blueprint $table) {
-            $table->id();
+            $table->id('idnetwork');
             $table->string('username', 75);
-            $table->string('segmente',11);
+            $table->string('segment',11);
             $table->string('ipadress', 11);
             $table->string('hostname',14);
             $table->string('operativesystem',75);
