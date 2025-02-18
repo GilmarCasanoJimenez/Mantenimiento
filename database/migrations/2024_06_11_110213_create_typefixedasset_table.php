@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('typefixedasset', function (Blueprint $table) {
-            $table->id();
+            $table->id('idtypefixedasset');
             $table->string('name', 150);
             $table->text('description')->nullable;
         });

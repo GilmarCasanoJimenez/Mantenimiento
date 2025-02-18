@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hardwaremaintenances', function (Blueprint $table) {
-            $table->id();
+        Schema::create('hardwaremaintenance', function (Blueprint $table) {
+            $table->id('idhardwaremaintenance');
             $table->string('processor');
             $table->decimal('ram',2);
             $table->string('motherboard');
