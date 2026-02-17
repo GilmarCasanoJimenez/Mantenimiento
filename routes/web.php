@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -14,9 +15,45 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::get('/activos-fijos', function () {
+    return redirect()->route('fixedasset.list');
+})->middleware(['auth', 'verified'])->name('fixedasset.index');
+
+Route::get('/activos-fijos/lista', function () {
+    return Inertia::render('FixedAsset/List');
+})->middleware(['auth', 'verified'])->name('fixedasset.list');
+
+Route::get('/activos-fijos/asignacion', function () {
+    return Inertia::render('FixedAsset/Assignment');
+})->middleware(['auth', 'verified'])->name('fixedasset.assignment');
+
+Route::get('/activos-fijos/mantenimiento', function () {
+    return Inertia::render('FixedAsset/Maintenance');
+})->middleware(['auth', 'verified'])->name('fixedasset.maintenance');
+
+Route::get('/mantenimientos', function () {
+    return redirect()->route('maintenance.list');
+})->middleware(['auth', 'verified'])->name('maintenance.index');
+
+Route::get('/mantenimientos/lista', function () {
+    return Inertia::render('Maintenance/List');
+})->middleware(['auth', 'verified'])->name('maintenance.list');
+
+Route::get('/mantenimientos/historial', function () {
+    return Inertia::render('Maintenance/History');
+})->middleware(['auth', 'verified'])->name('maintenance.history');
+
+Route::get('/person', function () {
+    return redirect()->route('person.list');
+})->middleware(['auth', 'verified'])->name('person.index');
+
+Route::get('/person/lista', function () {
+    return Inertia::render('Person/List');
+})->middleware(['auth', 'verified'])->name('person.list');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
