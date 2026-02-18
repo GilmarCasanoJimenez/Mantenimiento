@@ -2,18 +2,10 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::redirect('/', '/login');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
@@ -35,6 +27,26 @@ Route::get('/activos-fijos/mantenimiento', function () {
     return Inertia::render('FixedAsset/Maintenance');
 })->middleware(['auth', 'verified'])->name('fixedasset.maintenance');
 
+Route::get('/it-resources', function () {
+    return redirect()->route('itresources.hardware.list');
+})->middleware(['auth', 'verified'])->name('itresources.index');
+
+Route::get('/it-resources/hardware/list', function () {
+    return Inertia::render('ITResources/Hardware/List');
+})->middleware(['auth', 'verified'])->name('itresources.hardware.list');
+
+Route::get('/it-resources/hardware/details', function () {
+    return Inertia::render('ITResources/Hardware/Details');
+})->middleware(['auth', 'verified'])->name('itresources.hardware.details');
+
+Route::get('/it-resources/software/list', function () {
+    return Inertia::render('ITResources/Software/List');
+})->middleware(['auth', 'verified'])->name('itresources.software.list');
+
+Route::get('/it-resources/software/installed', function () {
+    return Inertia::render('ITResources/Software/Installed');
+})->middleware(['auth', 'verified'])->name('itresources.software.installed');
+
 Route::get('/mantenimientos', function () {
     return redirect()->route('maintenance.list');
 })->middleware(['auth', 'verified'])->name('maintenance.index');
@@ -54,6 +66,14 @@ Route::get('/person', function () {
 Route::get('/person/lista', function () {
     return Inertia::render('Person/List');
 })->middleware(['auth', 'verified'])->name('person.list');
+
+Route::get('/usuarios', function () {
+    return redirect()->route('users.list');
+})->middleware(['auth', 'verified'])->name('users.index');
+
+Route::get('/usuarios/lista', function () {
+    return Inertia::render('Users/List');
+})->middleware(['auth', 'verified'])->name('users.list');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
