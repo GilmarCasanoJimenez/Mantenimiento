@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('agencies', function (Blueprint $table) {
             $table->id('idagencie');
             $table->string('name',25);
-            $table->text('localitation')->nullable;
+            $table->text('localitation')->nullable();
         });
     }
 

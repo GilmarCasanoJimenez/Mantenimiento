@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('typefixedasset', function (Blueprint $table) {
             $table->id('idtypefixedasset');
             $table->string('name', 150);
-            $table->text('description')->nullable;
+            $table->text('description')->nullable();
         });
     }
 

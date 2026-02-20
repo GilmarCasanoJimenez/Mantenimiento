@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('software', function (Blueprint $table) {
             $table->id('idsoftware');
             $table->string('name',150);
-            $table->text('description')->nullable;
+            $table->text('description')->nullable();
         });
     }
 
