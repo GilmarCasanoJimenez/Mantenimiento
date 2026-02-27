@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -63,9 +64,29 @@ Route::get('/person', function () {
     return redirect()->route('person.list');
 })->middleware(['auth', 'verified'])->name('person.index');
 
-Route::get('/person/lista', function () {
-    return Inertia::render('Person/List');
-})->middleware(['auth', 'verified'])->name('person.list');
+Route::get('/person/lista', [PersonController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.list');
+
+Route::get('/person/crear', [PersonController::class, 'create'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.create');
+
+Route::post('/person', [PersonController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.store');
+
+Route::get('/person/{person}/editar', [PersonController::class, 'edit'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.edit');
+
+Route::patch('/person/{person}', [PersonController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.update');
+
+Route::patch('/person/{person}/toggle-state', [PersonController::class, 'toggleState'])
+    ->middleware(['auth', 'verified'])
+    ->name('person.toggle-state');
 
 Route::get('/usuarios', function () {
     return redirect()->route('users.list');

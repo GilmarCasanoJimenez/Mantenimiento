@@ -10,7 +10,7 @@ class DashboardController extends Controller
 {
     public function __invoke(): Response
     {
-        $people = DB::table('person')
+        $people = DB::table('people')
             ->select('idperson', 'name', 'employment', 'state', 'created_at')
             ->orderBy('name')
             ->get();
