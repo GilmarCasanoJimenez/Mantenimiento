@@ -5,13 +5,15 @@ import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function PersonList({ auth, persons = [] }) {
+export default function PersonList({ auth, persons = [], assignedAssets = {} }) {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showAssignedAssetsModal, setShowAssignedAssetsModal] = useState(false);
     const [editingPersonId, setEditingPersonId] = useState(null);
+    const [selectedPersonForAssets, setSelectedPersonForAssets] = useState(null);
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
     const [filters, setFilters] = useState({
@@ -122,6 +124,16 @@ export default function PersonList({ auth, persons = [] }) {
         });
     };
 
+    const openAssignedAssetsModal = (person) => {
+        setSelectedPersonForAssets(person);
+        setShowAssignedAssetsModal(true);
+    };
+
+    const closeAssignedAssetsModal = () => {
+        setShowAssignedAssetsModal(false);
+        setSelectedPersonForAssets(null);
+    };
+
     const handleToggleState = (person) => {
         const actionLabel = person.state === 1 ? 'desactivar' : 'activar';
 
@@ -144,6 +156,24 @@ export default function PersonList({ auth, persons = [] }) {
         );
     });
 
+    const formatDateOnly = (value) => {
+        if (!value) {
+            return '-';
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return '-';
+        }
+
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    };
+
     const copyTableToClipboard = async () => {
         if (filteredPersons.length === 0) {
             setCopiedRowsCount(0);
@@ -151,7 +181,7 @@ export default function PersonList({ auth, persons = [] }) {
             return;
         }
 
-        const headers = ['#', 'Nombre', 'Cargo', 'Tiene Usuario', 'Estado'];
+        const headers = ['#', 'Nombre', 'Cargo', 'Tiene Usuario', 'Estado', 'Últ. modif.'];
         const rows = filteredPersons.map((person, index) => {
             const stateLabel = person.state === 1 ? 'Activo' : 'Inactivo';
             const hasUserLabel = person.user_id ? 'Sí' : 'No';
@@ -162,6 +192,7 @@ export default function PersonList({ auth, persons = [] }) {
                 person.employment ?? '',
                 hasUserLabel,
                 stateLabel,
+                formatDateOnly(person.updated_at),
             ].join('\t');
         });
 
@@ -182,6 +213,10 @@ export default function PersonList({ auth, persons = [] }) {
         setShowCopyModal(true);
     };
 
+    const selectedPersonAssets = selectedPersonForAssets
+        ? assignedAssets[String(selectedPersonForAssets.idperson)] ?? []
+        : [];
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -190,7 +225,7 @@ export default function PersonList({ auth, persons = [] }) {
             <Head title="Lista de Funcionarios" />
 
             <div className="py-6">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
                             <div className="mb-3 flex justify-end gap-2">
@@ -229,6 +264,7 @@ export default function PersonList({ auth, persons = [] }) {
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Cargo</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Tiene Usuario</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Estado</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Últ. modif.</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
                                             </tr>
                                             <tr>
@@ -274,6 +310,7 @@ export default function PersonList({ auth, persons = [] }) {
                                                     </select>
                                                 </th>
                                                 <th className="px-4 py-2" />
+                                                <th className="px-4 py-2" />
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -286,10 +323,12 @@ export default function PersonList({ auth, persons = [] }) {
                                                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                                                         {person.state === 1 ? 'Activo' : 'Inactivo'}
                                                     </td>
+                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{formatDateOnly(person.updated_at)}</td>
                                                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                                                         <div className="flex items-center gap-2">
-                                                            <Link
-                                                                href={route('fixedasset.list', { person: person.idperson })}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openAssignedAssetsModal(person)}
                                                                 className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                                                             >
                                                                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -297,7 +336,7 @@ export default function PersonList({ auth, persons = [] }) {
                                                                     <path d="M7 20h10" />
                                                                 </svg>
                                                                 Activos asignados
-                                                            </Link>
+                                                            </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => openEditModal(person)}
@@ -568,6 +607,57 @@ export default function PersonList({ auth, persons = [] }) {
                             </svg>
                             Aceptar
                         </PrimaryButton>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal show={showAssignedAssetsModal} onClose={closeAssignedAssetsModal} maxWidth="4xl">
+                <div className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                        {selectedPersonForAssets
+                            ? `Activos asignados a ${selectedPersonForAssets.name}`
+                            : 'Activos asignados'}
+                    </h2>
+
+                    {selectedPersonAssets.length === 0 ? (
+                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                            Este funcionario no tiene activos asignados.
+                        </p>
+                    ) : (
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-900/40">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">#</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Tipo</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Marca</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Modelo</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Serial</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Agencia</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Ubicación</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 text-gray-900 dark:divide-gray-700 dark:text-gray-100">
+                                    {selectedPersonAssets.map((asset, index) => (
+                                        <tr key={asset.idfixedasset}>
+                                            <td className="px-4 py-3 text-sm">{index + 1}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.type_name ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.brand ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.model ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.serial ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.agencie_name ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm break-words">{asset.location ?? '-'}</td>
+                                            <td className="px-4 py-3 text-sm">{asset.state === 1 ? 'Alta' : 'Baja'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-end">
+                        <SecondaryButton type="button" onClick={closeAssignedAssetsModal}>Cerrar</SecondaryButton>
                     </div>
                 </div>
             </Modal>

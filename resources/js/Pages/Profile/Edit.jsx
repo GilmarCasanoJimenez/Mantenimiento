@@ -14,7 +14,7 @@ export default function Edit() {
             <Head title="Profile" />
 
             <div className="py-6">
-                <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
+                <div className="mx-auto w-full space-y-6 px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white p-4 shadow sm:rounded-lg sm:p-8 dark:bg-gray-800">
                         <UpdatePasswordForm className="max-w-xl" />
                     </div>

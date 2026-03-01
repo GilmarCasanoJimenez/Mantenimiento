@@ -10,7 +10,7 @@ export default function PersonEdit({ auth, person }) {
             <Head title="Modificar funcionario" />
 
             <div className="py-6">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100 space-y-2">
                             <p><strong>ID:</strong> {person.idperson}</p>

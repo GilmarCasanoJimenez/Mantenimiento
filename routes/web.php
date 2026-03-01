@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -16,13 +18,25 @@ Route::get('/activos-fijos', function () {
     return redirect()->route('fixedasset.list');
 })->middleware(['auth', 'verified'])->name('fixedasset.index');
 
-Route::get('/activos-fijos/lista', function () {
-    return Inertia::render('FixedAsset/List');
-})->middleware(['auth', 'verified'])->name('fixedasset.list');
+Route::get('/activos-fijos/lista', [FixedAssetController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.list');
 
-Route::get('/activos-fijos/asignacion', function () {
-    return Inertia::render('FixedAsset/Assignment');
-})->middleware(['auth', 'verified'])->name('fixedasset.assignment');
+Route::patch('/activos-fijos/{fixedasset}/toggle-state', [FixedAssetController::class, 'toggleState'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.toggle-state');
+
+Route::get('/activos-fijos/asignacion', [FixedAssetController::class, 'create'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.assignment');
+
+Route::post('/activos-fijos', [FixedAssetController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.store');
+
+Route::patch('/activos-fijos/{fixedasset}', [FixedAssetController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.update');
 
 Route::get('/activos-fijos/mantenimiento', function () {
     return Inertia::render('FixedAsset/Maintenance');
@@ -63,6 +77,34 @@ Route::get('/mantenimientos/historial', function () {
 Route::get('/person', function () {
     return redirect()->route('person.list');
 })->middleware(['auth', 'verified'])->name('person.index');
+
+Route::get('/configuraciones', function () {
+    return redirect()->route('settings.agencies.list');
+})->middleware(['auth', 'verified'])->name('settings.index');
+
+Route::get('/configuraciones/agencias', [SettingsController::class, 'agenciesIndex'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.agencies.list');
+
+Route::post('/configuraciones/agencias', [SettingsController::class, 'agenciesStore'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.agencies.store');
+
+Route::patch('/configuraciones/agencias/{agencie}', [SettingsController::class, 'agenciesUpdate'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.agencies.update');
+
+Route::get('/configuraciones/tipos-activos', [SettingsController::class, 'assetTypesIndex'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.asset-types.list');
+
+Route::post('/configuraciones/tipos-activos', [SettingsController::class, 'assetTypesStore'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.asset-types.store');
+
+Route::patch('/configuraciones/tipos-activos/{typefixedasset}', [SettingsController::class, 'assetTypesUpdate'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.asset-types.update');
 
 Route::get('/person/lista', [PersonController::class, 'index'])
     ->middleware(['auth', 'verified'])

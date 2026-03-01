@@ -1,12 +1,12 @@
 export function PageContainer({ children, width = '7xl', className = '' }) {
     const widthClass = {
-        '7xl': 'max-w-7xl',
-        '3xl': 'max-w-3xl',
-    }[width] ?? 'max-w-7xl';
+        '7xl': 'w-full',
+        '3xl': 'w-full',
+    }[width] ?? 'w-full';
 
     return (
         <div className={`py-6 ${className}`.trim()}>
-            <div className={`mx-auto ${widthClass} sm:px-6 lg:px-8`}>
+            <div className={`mx-auto ${widthClass} px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10`}>
                 {children}
             </div>
         </div>
