@@ -5,7 +5,10 @@
     <title>Hoja de Mantenimiento #{{ $item->idmaintenance }}</title>
     <style>
         @page {
-            margin: 18px 24px 18px 24px;
+            margin-top: 1.5cm;
+            margin-right: 1.5cm;
+            margin-bottom: 0.75cm;
+            margin-left: 2.5cm;
         }
 
         * {
