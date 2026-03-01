@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FixedAssetController;
+use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
@@ -66,9 +67,21 @@ Route::get('/mantenimientos', function () {
     return redirect()->route('maintenance.list');
 })->middleware(['auth', 'verified'])->name('maintenance.index');
 
-Route::get('/mantenimientos/lista', function () {
-    return Inertia::render('Maintenance/List');
-})->middleware(['auth', 'verified'])->name('maintenance.list');
+Route::get('/mantenimientos/lista', [MaintenanceController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('maintenance.list');
+
+Route::post('/mantenimientos', [MaintenanceController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('maintenance.store');
+
+Route::patch('/mantenimientos/{maintenance}', [MaintenanceController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('maintenance.update');
+
+Route::get('/mantenimientos/{maintenance}/pdf', [MaintenanceController::class, 'report'])
+    ->middleware(['auth', 'verified'])
+    ->name('maintenance.report');
 
 Route::get('/mantenimientos/historial', function () {
     return Inertia::render('Maintenance/History');
