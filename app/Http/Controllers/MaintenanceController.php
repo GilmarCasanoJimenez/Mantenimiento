@@ -55,6 +55,7 @@ class MaintenanceController extends Controller
             ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
             ->select(
                 'fa.idfixedasset',
+                'fa.asset_code',
                 'fa.brand',
                 'fa.model',
                 DB::raw('tfa.name as type_name')
@@ -170,6 +171,7 @@ class MaintenanceController extends Controller
                 'm.observation',
                 'm.location',
                 'fa.idfixedasset',
+                'fa.asset_code',
                 'fa.datepurchase',
                 'fa.brand',
                 'fa.model',

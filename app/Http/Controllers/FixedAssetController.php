@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -57,6 +58,7 @@ class FixedAssetController extends Controller
             ->leftJoin('people as p', 'p.idperson', '=', 'fa.idperson')
             ->select(
                 'fa.idfixedasset',
+                'fa.asset_code',
                 'fa.idtypefixedasset',
                 'fa.idagencie',
                 'fa.idperson',
@@ -87,6 +89,7 @@ class FixedAssetController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'asset_code' => ['required', 'string', 'max:45', 'unique:fixedasset,asset_code'],
             'idtypefixedasset' => ['required', 'integer', 'exists:typefixedasset,idtypefixedasset'],
             'datepurchase' => ['required', 'date'],
             'brand' => ['required', 'string', 'max:45'],
@@ -101,6 +104,7 @@ class FixedAssetController extends Controller
         ]);
 
         DB::table('fixedasset')->insert([
+            'asset_code' => $validated['asset_code'],
             'idtypefixedasset' => $validated['idtypefixedasset'],
             'datepurchase' => $validated['datepurchase'],
             'brand' => $validated['brand'],
@@ -130,6 +134,12 @@ class FixedAssetController extends Controller
         }
 
         $validated = $request->validate([
+            'asset_code' => [
+                'required',
+                'string',
+                'max:45',
+                Rule::unique('fixedasset', 'asset_code')->ignore($fixedasset, 'idfixedasset'),
+            ],
             'idtypefixedasset' => ['required', 'integer', 'exists:typefixedasset,idtypefixedasset'],
             'datepurchase' => ['required', 'date'],
             'brand' => ['required', 'string', 'max:45'],
@@ -146,6 +156,7 @@ class FixedAssetController extends Controller
         DB::table('fixedasset')
             ->where('idfixedasset', $fixedasset)
             ->update([
+                'asset_code' => $validated['asset_code'],
                 'idtypefixedasset' => $validated['idtypefixedasset'],
                 'datepurchase' => $validated['datepurchase'],
                 'brand' => $validated['brand'],

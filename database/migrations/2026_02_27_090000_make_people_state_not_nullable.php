@@ -7,12 +7,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("UPDATE people SET state = 0 WHERE state IS NULL");
         DB::statement("ALTER TABLE people MODIFY state TINYINT NOT NULL DEFAULT 1");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE people MODIFY state TINYINT NULL DEFAULT NULL");
     }
 };

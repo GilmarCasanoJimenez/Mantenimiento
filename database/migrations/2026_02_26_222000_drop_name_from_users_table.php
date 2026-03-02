@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('name');
         });
@@ -16,6 +20,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->string('name')->nullable()->after('idperson');
         });

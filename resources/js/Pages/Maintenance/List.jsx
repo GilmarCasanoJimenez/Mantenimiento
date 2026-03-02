@@ -6,8 +6,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DatePickerInput from '@/Components/DatePickerInput';
 import TextInput from '@/Components/TextInput';
+import { Combobox, Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 export default function MaintenanceList({ auth, maintenances = [], hardwareMaintenances = [], fixedAssets = [], agencies = [], people = [], users = [] }) {
     const [showCopyModal, setShowCopyModal] = useState(false);
@@ -15,6 +16,8 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingMaintenanceId, setEditingMaintenanceId] = useState(null);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
+    const [assetQuery, setAssetQuery] = useState('');
+    const [editAssetQuery, setEditAssetQuery] = useState('');
     const [filters, setFilters] = useState({
         type: '',
         asset: '',
@@ -81,8 +84,10 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         });
     };
 
-    const assetLabel = (item) => `${item.idfixedasset} - ${item.type_name ?? '-'} - ${item.brand ?? '-'} ${item.model ?? ''}`;
+    const assetLabel = (item) => `${item.asset_code ?? item.idfixedasset} - ${item.type_name ?? '-'} - ${item.brand ?? '-'} ${item.model ?? ''}`;
     const personLabel = (item) => `${item.name} - ${item.employment}`;
+    const compactSelectClass = 'rounded-md border-gray-300 bg-white py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100';
+    const compactInputClass = 'mt-1 block w-full py-1.5 text-sm';
 
     const filteredMaintenances = maintenances.filter((item) => (
         (item.type ?? '').toLowerCase().includes(filters.type.toLowerCase())
@@ -91,10 +96,20 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         && (item.agencie_name ?? '').toLowerCase().includes(filters.agencie.toLowerCase())
     ));
 
+    const selectedAsset = fixedAssets.find((item) => String(item.idfixedasset) === String(data.idfixedasset));
+    const selectedEditAsset = fixedAssets.find((item) => String(item.idfixedasset) === String(editData.idfixedasset));
+    const filteredFixedAssets = assetQuery.trim() === ''
+        ? fixedAssets
+        : fixedAssets.filter((item) => assetLabel(item).toLowerCase().includes(assetQuery.toLowerCase()));
+    const filteredEditFixedAssets = editAssetQuery.trim() === ''
+        ? fixedAssets
+        : fixedAssets.filter((item) => assetLabel(item).toLowerCase().includes(editAssetQuery.toLowerCase()));
+
     const openCreateModal = () => setShowCreateModal(true);
 
     const closeCreateModal = () => {
         setShowCreateModal(false);
+        setAssetQuery('');
         clearErrors();
         reset();
     };
@@ -112,12 +127,14 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         setEditData('location', item.location ?? '');
         setEditData('idperson', item.idperson ? String(item.idperson) : '');
         setEditData('iduser', item.iduser ? String(item.iduser) : '');
+        setEditAssetQuery('');
         setShowEditModal(true);
     };
 
     const closeEditModal = () => {
         setShowEditModal(false);
         setEditingMaintenanceId(null);
+        setEditAssetQuery('');
         clearEditErrors();
         resetEdit();
     };
@@ -346,13 +363,13 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
             </Modal>
 
             <Modal show={showCreateModal} onClose={closeCreateModal} maxWidth="4xl">
-                <form onSubmit={submitCreate} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Nuevo mantenimiento</h2>
+                <form onSubmit={submitCreate} className="p-4 sm:p-5">
+                    <h2 className="text-base font-medium text-gray-900 dark:text-gray-100">Nuevo mantenimiento</h2>
 
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <InputLabel htmlFor="idhardwaremaintenance" value="Hardware mantenimiento" />
-                            <select id="idhardwaremaintenance" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={data.idhardwaremaintenance} onChange={(event) => setData('idhardwaremaintenance', event.target.value)} required>
+                            <select id="idhardwaremaintenance" className={`mt-1 block w-full ${compactSelectClass}`} value={data.idhardwaremaintenance} onChange={(event) => setData('idhardwaremaintenance', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {hardwareMaintenances.map((item) => (
                                     <option key={item.idhardwaremaintenance} value={item.idhardwaremaintenance}>{`${item.idhardwaremaintenance} - ${item.processor}`}</option>
@@ -363,30 +380,67 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="type" value="Tipo" />
-                            <TextInput id="type" className="mt-1 block w-full" value={data.type} onChange={(event) => setData('type', event.target.value)} required />
+                            <TextInput id="type" className={compactInputClass} value={data.type} onChange={(event) => setData('type', event.target.value)} required />
                             <InputError message={errors.type} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="idfixedasset" value="Activo fijo" />
-                            <select id="idfixedasset" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={data.idfixedasset} onChange={(event) => setData('idfixedasset', event.target.value)} required>
-                                <option value="">Selecciona...</option>
-                                {fixedAssets.map((item) => (
-                                    <option key={item.idfixedasset} value={item.idfixedasset}>{assetLabel(item)}</option>
-                                ))}
-                            </select>
+                            <Combobox
+                                value={selectedAsset ?? null}
+                                onChange={(item) => {
+                                    setData('idfixedasset', item ? String(item.idfixedasset) : '');
+                                    setAssetQuery('');
+                                }}
+                            >
+                                <div className="relative mt-1">
+                                    <div className="relative w-full cursor-default overflow-hidden rounded-md border border-gray-300 bg-white text-left shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900">
+                                        <Combobox.Input
+                                            id="idfixedasset"
+                                            className="w-full border-none bg-transparent py-1.5 pl-3 pr-10 text-sm text-gray-900 focus:ring-0 dark:text-gray-100"
+                                            displayValue={(item) => (item ? assetLabel(item) : '')}
+                                            onChange={(event) => {
+                                                setAssetQuery(event.target.value);
+                                                if (!event.target.value) {
+                                                    setData('idfixedasset', '');
+                                                }
+                                            }}
+                                            placeholder="Escribe para buscar activo..."
+                                            autoComplete="off"
+                                        />
+                                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                            <svg className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                            </svg>
+                                        </Combobox.Button>
+                                    </div>
+                                    <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                                        <Combobox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-sm text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white">
+                                            {filteredFixedAssets.length === 0 ? (
+                                                <div className="relative cursor-default select-none px-3 py-2 text-gray-500 dark:text-gray-300">Sin coincidencias</div>
+                                            ) : (
+                                                filteredFixedAssets.map((item) => (
+                                                    <Combobox.Option key={item.idfixedasset} value={item} className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                        <span className="block truncate">{assetLabel(item)}</span>
+                                                    </Combobox.Option>
+                                                ))
+                                            )}
+                                        </Combobox.Options>
+                                    </Transition>
+                                </div>
+                            </Combobox>
                             <InputError message={errors.idfixedasset} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="date" value="Fecha" />
-                            <DatePickerInput id="date" value={data.date} onChange={(value) => setData('date', value)} placeholder="Selecciona fecha" />
+                            <DatePickerInput id="date" value={data.date} onChange={(value) => setData('date', value)} placeholder="Selecciona fecha" compact />
                             <InputError message={errors.date} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="idagencie" value="Agencia" />
-                            <select id="idagencie" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={data.idagencie} onChange={(event) => setData('idagencie', event.target.value)} required>
+                            <select id="idagencie" className={`mt-1 block w-full ${compactSelectClass}`} value={data.idagencie} onChange={(event) => setData('idagencie', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {agencies.map((item) => (
                                     <option key={item.idagencie} value={item.idagencie}>{item.name}</option>
@@ -397,13 +451,13 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="location" value="Ubicación" />
-                            <TextInput id="location" className="mt-1 block w-full" value={data.location} onChange={(event) => setData('location', event.target.value)} required />
+                            <TextInput id="location" className={compactInputClass} value={data.location} onChange={(event) => setData('location', event.target.value)} required />
                             <InputError message={errors.location} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="idperson" value="Funcionario" />
-                            <select id="idperson" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={data.idperson} onChange={(event) => setData('idperson', event.target.value)} required>
+                            <select id="idperson" className={`mt-1 block w-full ${compactSelectClass}`} value={data.idperson} onChange={(event) => setData('idperson', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {people.map((item) => (
                                     <option key={item.idperson} value={item.idperson}>{personLabel(item)}</option>
@@ -414,7 +468,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="iduser" value="Usuario" />
-                            <select id="iduser" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={data.iduser} onChange={(event) => setData('iduser', event.target.value)} required>
+                            <select id="iduser" className={`mt-1 block w-full ${compactSelectClass}`} value={data.iduser} onChange={(event) => setData('iduser', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {users.map((item) => (
                                     <option key={item.id} value={item.id}>{item.name}</option>
@@ -425,24 +479,24 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="diagnostic" value="Diagnóstico" />
-                            <TextInput id="diagnostic" className="mt-1 block w-full" value={data.diagnostic} onChange={(event) => setData('diagnostic', event.target.value)} required />
+                            <TextInput id="diagnostic" className={compactInputClass} value={data.diagnostic} onChange={(event) => setData('diagnostic', event.target.value)} required />
                             <InputError message={errors.diagnostic} className="mt-2" />
                         </div>
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="workdone" value="Trabajo realizado" />
-                            <TextInput id="workdone" className="mt-1 block w-full" value={data.workdone} onChange={(event) => setData('workdone', event.target.value)} required />
+                            <TextInput id="workdone" className={compactInputClass} value={data.workdone} onChange={(event) => setData('workdone', event.target.value)} required />
                             <InputError message={errors.workdone} className="mt-2" />
                         </div>
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="observation" value="Observación" />
-                            <TextInput id="observation" className="mt-1 block w-full" value={data.observation} onChange={(event) => setData('observation', event.target.value)} required />
+                            <TextInput id="observation" className={compactInputClass} value={data.observation} onChange={(event) => setData('observation', event.target.value)} required />
                             <InputError message={errors.observation} className="mt-2" />
                         </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-2">
+                    <div className="mt-4 flex justify-end gap-2">
                         <SecondaryButton type="button" onClick={closeCreateModal}>Cancelar</SecondaryButton>
                         <PrimaryButton disabled={processing}>Guardar mantenimiento</PrimaryButton>
                     </div>
@@ -450,13 +504,13 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
             </Modal>
 
             <Modal show={showEditModal} onClose={closeEditModal} maxWidth="4xl">
-                <form onSubmit={submitEdit} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Modificar mantenimiento</h2>
+                <form onSubmit={submitEdit} className="p-4 sm:p-5">
+                    <h2 className="text-base font-medium text-gray-900 dark:text-gray-100">Modificar mantenimiento</h2>
 
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <InputLabel htmlFor="edit_idhardwaremaintenance" value="Hardware mantenimiento" />
-                            <select id="edit_idhardwaremaintenance" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={editData.idhardwaremaintenance} onChange={(event) => setEditData('idhardwaremaintenance', event.target.value)} required>
+                            <select id="edit_idhardwaremaintenance" className={`mt-1 block w-full ${compactSelectClass}`} value={editData.idhardwaremaintenance} onChange={(event) => setEditData('idhardwaremaintenance', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {hardwareMaintenances.map((item) => (
                                     <option key={item.idhardwaremaintenance} value={item.idhardwaremaintenance}>{`${item.idhardwaremaintenance} - ${item.processor}`}</option>
@@ -467,30 +521,67 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="edit_type" value="Tipo" />
-                            <TextInput id="edit_type" className="mt-1 block w-full" value={editData.type} onChange={(event) => setEditData('type', event.target.value)} required />
+                            <TextInput id="edit_type" className={compactInputClass} value={editData.type} onChange={(event) => setEditData('type', event.target.value)} required />
                             <InputError message={editErrors.type} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="edit_idfixedasset" value="Activo fijo" />
-                            <select id="edit_idfixedasset" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={editData.idfixedasset} onChange={(event) => setEditData('idfixedasset', event.target.value)} required>
-                                <option value="">Selecciona...</option>
-                                {fixedAssets.map((item) => (
-                                    <option key={item.idfixedasset} value={item.idfixedasset}>{assetLabel(item)}</option>
-                                ))}
-                            </select>
+                            <Combobox
+                                value={selectedEditAsset ?? null}
+                                onChange={(item) => {
+                                    setEditData('idfixedasset', item ? String(item.idfixedasset) : '');
+                                    setEditAssetQuery('');
+                                }}
+                            >
+                                <div className="relative mt-1">
+                                    <div className="relative w-full cursor-default overflow-hidden rounded-md border border-gray-300 bg-white text-left shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900">
+                                        <Combobox.Input
+                                            id="edit_idfixedasset"
+                                            className="w-full border-none bg-transparent py-1.5 pl-3 pr-10 text-sm text-gray-900 focus:ring-0 dark:text-gray-100"
+                                            displayValue={(item) => (item ? assetLabel(item) : '')}
+                                            onChange={(event) => {
+                                                setEditAssetQuery(event.target.value);
+                                                if (!event.target.value) {
+                                                    setEditData('idfixedasset', '');
+                                                }
+                                            }}
+                                            placeholder="Escribe para buscar activo..."
+                                            autoComplete="off"
+                                        />
+                                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                            <svg className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                            </svg>
+                                        </Combobox.Button>
+                                    </div>
+                                    <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                                        <Combobox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-sm text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white">
+                                            {filteredEditFixedAssets.length === 0 ? (
+                                                <div className="relative cursor-default select-none px-3 py-2 text-gray-500 dark:text-gray-300">Sin coincidencias</div>
+                                            ) : (
+                                                filteredEditFixedAssets.map((item) => (
+                                                    <Combobox.Option key={item.idfixedasset} value={item} className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-white'}`}>
+                                                        <span className="block truncate">{assetLabel(item)}</span>
+                                                    </Combobox.Option>
+                                                ))
+                                            )}
+                                        </Combobox.Options>
+                                    </Transition>
+                                </div>
+                            </Combobox>
                             <InputError message={editErrors.idfixedasset} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="edit_date" value="Fecha" />
-                            <DatePickerInput id="edit_date" value={editData.date} onChange={(value) => setEditData('date', value)} placeholder="Selecciona fecha" />
+                            <DatePickerInput id="edit_date" value={editData.date} onChange={(value) => setEditData('date', value)} placeholder="Selecciona fecha" compact />
                             <InputError message={editErrors.date} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="edit_idagencie" value="Agencia" />
-                            <select id="edit_idagencie" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={editData.idagencie} onChange={(event) => setEditData('idagencie', event.target.value)} required>
+                            <select id="edit_idagencie" className={`mt-1 block w-full ${compactSelectClass}`} value={editData.idagencie} onChange={(event) => setEditData('idagencie', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {agencies.map((item) => (
                                     <option key={item.idagencie} value={item.idagencie}>{item.name}</option>
@@ -501,13 +592,13 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="edit_location" value="Ubicación" />
-                            <TextInput id="edit_location" className="mt-1 block w-full" value={editData.location} onChange={(event) => setEditData('location', event.target.value)} required />
+                            <TextInput id="edit_location" className={compactInputClass} value={editData.location} onChange={(event) => setEditData('location', event.target.value)} required />
                             <InputError message={editErrors.location} className="mt-2" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="edit_idperson" value="Funcionario" />
-                            <select id="edit_idperson" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={editData.idperson} onChange={(event) => setEditData('idperson', event.target.value)} required>
+                            <select id="edit_idperson" className={`mt-1 block w-full ${compactSelectClass}`} value={editData.idperson} onChange={(event) => setEditData('idperson', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {people.map((item) => (
                                     <option key={item.idperson} value={item.idperson}>{personLabel(item)}</option>
@@ -518,7 +609,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div>
                             <InputLabel htmlFor="edit_iduser" value="Usuario" />
-                            <select id="edit_iduser" className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" value={editData.iduser} onChange={(event) => setEditData('iduser', event.target.value)} required>
+                            <select id="edit_iduser" className={`mt-1 block w-full ${compactSelectClass}`} value={editData.iduser} onChange={(event) => setEditData('iduser', event.target.value)} required>
                                 <option value="">Selecciona...</option>
                                 {users.map((item) => (
                                     <option key={item.id} value={item.id}>{item.name}</option>
@@ -529,24 +620,24 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="edit_diagnostic" value="Diagnóstico" />
-                            <TextInput id="edit_diagnostic" className="mt-1 block w-full" value={editData.diagnostic} onChange={(event) => setEditData('diagnostic', event.target.value)} required />
+                            <TextInput id="edit_diagnostic" className={compactInputClass} value={editData.diagnostic} onChange={(event) => setEditData('diagnostic', event.target.value)} required />
                             <InputError message={editErrors.diagnostic} className="mt-2" />
                         </div>
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="edit_workdone" value="Trabajo realizado" />
-                            <TextInput id="edit_workdone" className="mt-1 block w-full" value={editData.workdone} onChange={(event) => setEditData('workdone', event.target.value)} required />
+                            <TextInput id="edit_workdone" className={compactInputClass} value={editData.workdone} onChange={(event) => setEditData('workdone', event.target.value)} required />
                             <InputError message={editErrors.workdone} className="mt-2" />
                         </div>
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="edit_observation" value="Observación" />
-                            <TextInput id="edit_observation" className="mt-1 block w-full" value={editData.observation} onChange={(event) => setEditData('observation', event.target.value)} required />
+                            <TextInput id="edit_observation" className={compactInputClass} value={editData.observation} onChange={(event) => setEditData('observation', event.target.value)} required />
                             <InputError message={editErrors.observation} className="mt-2" />
                         </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-2">
+                    <div className="mt-4 flex justify-end gap-2">
                         <SecondaryButton type="button" onClick={closeEditModal}>Cancelar</SecondaryButton>
                         <PrimaryButton disabled={editProcessing}>Guardar cambios</PrimaryButton>
                     </div>

@@ -75,7 +75,7 @@ const applyDateMask = (rawValue) => {
     return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
 
-export default function DatePickerInput({ id, value, onChange, placeholder = 'Selecciona fecha' }) {
+export default function DatePickerInput({ id, value, onChange, placeholder = 'Selecciona fecha', compact = false }) {
     const selectedDate = useMemo(() => fromIsoDate(value), [value]);
     const [typedValue, setTypedValue] = useState(toDisplayDate(selectedDate));
 
@@ -112,7 +112,7 @@ export default function DatePickerInput({ id, value, onChange, placeholder = 'Se
                             type="text"
                             inputMode="numeric"
                             placeholder={`${placeholder} (dd/mm/aaaa)`}
-                            className="w-full rounded-md border border-gray-300 bg-white py-2 pl-4 pr-12 text-left text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400"
+                            className={`w-full rounded-md border border-gray-300 bg-white text-left text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 ${compact ? 'py-1.5 pl-3 pr-11' : 'py-2 pl-4 pr-12'}`}
                             value={typedValue}
                             onChange={(event) => {
                                 const nextValue = event.target.value;
@@ -145,7 +145,7 @@ export default function DatePickerInput({ id, value, onChange, placeholder = 'Se
                         />
                         <Popover.Button
                             type="button"
-                            className="absolute inset-y-1 right-1 inline-flex items-center justify-center rounded-full border border-gray-300 bg-gray-50 px-2 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            className={`absolute right-1 inline-flex items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 ${compact ? 'inset-y-1 px-2' : 'inset-y-1 px-2'}`}
                         >
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="3" y="4" width="18" height="18" rx="5" ry="5" />

@@ -29,6 +29,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
     });
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        asset_code: '',
         idtypefixedasset: '',
         datepurchase: '',
         brand: '',
@@ -50,6 +51,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         reset: resetEdit,
         clearErrors: clearEditErrors,
     } = useForm({
+        asset_code: '',
         idtypefixedasset: '',
         datepurchase: '',
         brand: '',
@@ -76,6 +78,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
 
     const openEditModal = (asset) => {
         setEditingAssetId(asset.idfixedasset);
+        setEditData('asset_code', asset.asset_code ?? '');
         setEditData('idtypefixedasset', asset.idtypefixedasset ? String(asset.idtypefixedasset) : '');
         setEditData('datepurchase', asset.datepurchase ?? '');
         setEditData('brand', asset.brand ?? '');
@@ -164,12 +167,13 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
             return;
         }
 
-        const headers = ['#', 'Tipo', 'Marca', 'Modelo', 'Fecha compra', 'Serial', 'Responsable', 'Agencia', 'Ubicación', 'Estado', 'Últ. modif.'];
+        const headers = ['#', 'Código', 'Tipo', 'Marca', 'Modelo', 'Fecha compra', 'Serial', 'Responsable', 'Agencia', 'Ubicación', 'Estado', 'Últ. modif.'];
         const rows = filteredAssets.map((asset, index) => {
             const stateLabel = asset.state === 1 ? 'Alta' : 'Baja';
 
             return [
                 String(index + 1),
+            asset.asset_code ?? '-',
                 asset.type_name ?? '-',
                 asset.brand ?? '-',
                 asset.model ?? '-',
@@ -266,6 +270,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                         <thead className="bg-gray-50 dark:bg-gray-900/40">
                                             <tr>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">#</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Código</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Tipo</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Marca</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Modelo</th>
@@ -278,6 +283,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
                                             </tr>
                                             <tr>
+                                                <th className="px-4 py-2" />
                                                 <th className="px-4 py-2" />
                                                 <th className="px-4 py-2">
                                                     <input
@@ -337,6 +343,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                             {filteredAssets.map((asset, index) => (
                                                 <tr key={asset.idfixedasset}>
                                                     <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
+                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.asset_code ?? '-'}</td>
                                                     <td className="px-4 py-3 text-sm align-top break-words">{asset.type_name ?? '-'}</td>
                                                     <td className="px-4 py-3 text-sm align-top break-words">{asset.brand}</td>
                                                     <td className="px-4 py-3 text-sm align-top break-words">{asset.model}</td>
@@ -391,6 +398,18 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                     <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Nuevo activo</h2>
 
                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="asset_code" value="Código de activo" />
+                            <TextInput
+                                id="asset_code"
+                                className="mt-1 block w-full"
+                                value={data.asset_code}
+                                onChange={(event) => setData('asset_code', event.target.value)}
+                                required
+                            />
+                            <InputError message={errors.asset_code} className="mt-2" />
+                        </div>
+
                         <div>
                             <InputLabel htmlFor="idtypefixedasset" value="Tipo de activo" />
                             <Combobox
@@ -641,6 +660,12 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                     <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Modificar activo</h2>
 
                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="edit_asset_code" value="Código de activo" />
+                            <TextInput id="edit_asset_code" className="mt-1 block w-full" value={editData.asset_code} onChange={(event) => setEditData('asset_code', event.target.value)} required />
+                            <InputError message={editErrors.asset_code} className="mt-2" />
+                        </div>
+
                         <div>
                             <InputLabel htmlFor="edit_idtypefixedasset" value="Tipo de activo" />
                             <Combobox

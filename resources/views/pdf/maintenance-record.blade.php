@@ -32,7 +32,7 @@
         }
 
         .logo-wrap img {
-            width: 280px;
+            width: 220px;
             height: auto;
         }
 
@@ -44,7 +44,7 @@
         .main-title {
             text-align: center;
             font-weight: 700;
-            font-size: 27px;
+            font-size: 18px;
             color: #007436;
             margin-bottom: 2px;
             text-transform: uppercase;
@@ -52,14 +52,14 @@
 
         .main-subtitle {
             text-align: center;
-            font-size: 22px;
+            font-size: 13px;
             color: #007436;
             font-weight: 700;
             margin-bottom: 12px;
         }
 
         .section-title {
-            background: #c7c7c7;
+            background: #cfcfcf;
             border: 1.3px solid #000;
             border-bottom: 0;
             padding: 5px 8px;
@@ -88,7 +88,7 @@
         .label {
             font-weight: 700;
             text-transform: uppercase;
-            background: #ffffff;
+            background: #d9d9d9;
         }
 
         .value-italic {
@@ -104,18 +104,18 @@
 
         .check-box {
             display: inline-block;
-            width: 24px;
-            height: 24px;
-            line-height: 21px;
+            width: 22px;
+            height: 22px;
+            line-height: 19px;
             border: 2px solid #5d8fcc;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             vertical-align: middle;
         }
 
         .line-area {
-            min-height: 78px;
+            min-height: 72px;
             padding: 2px 2px 0 2px;
         }
 
@@ -125,7 +125,7 @@
         }
 
         .line-row {
-            min-height: 13px;
+            min-height: 12px;
             border-bottom: 1px dotted #9ca3af;
             margin-bottom: 2px;
             font-size: 10px;
@@ -138,12 +138,12 @@
         }
 
         .bullets {
-            min-height: 92px;
+            min-height: 86px;
             padding: 2px 2px 0 2px;
         }
 
         .bullet-line {
-            min-height: 13px;
+            min-height: 12px;
             border-bottom: 1px dotted #9ca3af;
             margin-bottom: 2px;
             padding: 0 2px;
@@ -256,7 +256,7 @@
     ])));
 
     $logoDataUri = null;
-    $canRenderPng = function_exists('imagecreatefrompng') || function_exists('imagecreatefromstring');
+    $canRenderPng = extension_loaded('gd') || function_exists('gd_info');
     $logoCandidates = [
         public_path('ccb_logo_fondo_blanco_complero.png'),
         public_path('ccb_logo_transparente.png'),
@@ -265,10 +265,14 @@
 
     if ($canRenderPng) {
         foreach ($logoCandidates as $logoPath) {
-            if (is_file($logoPath)) {
+            if (is_file($logoPath) && is_readable($logoPath)) {
                 $mime = mime_content_type($logoPath) ?: 'image/png';
-                $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
-                break;
+                $content = file_get_contents($logoPath);
+
+                if ($content !== false) {
+                    $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode($content);
+                    break;
+                }
             }
         }
     }
@@ -312,6 +316,12 @@
     $diagLines = $toFixedRows($diagnosticText !== '' ? [$diagnosticText] : ['-'], 4);
     $workRows = $toFixedRows(count($workLines) > 0 ? $workLines : ['-'], 6);
     $obsRows = $toFixedRows(count($obsLines) > 0 ? $obsLines : ['-'], 6);
+
+    $assetCode = $item->asset_code
+        ?? $item->codigo_activo
+        ?? $item->code
+        ?? $item->idfixedasset
+        ?? '-';
 @endphp
 
 <div class="sheet">
@@ -335,43 +345,43 @@
         <col style="width: 32%">
     </colgroup>
     <tr>
-        <td class="label">CÓDIGO DE ACTIVO</td>
-        <td>CCB {{ $item->idfixedasset ?? '-' }}</td>
-        <td class="label">ID</td>
+        <td class="label">CÓDIGO DE ACTIVO:</td>
+        <td>{{ $assetCode }}</td>
+        <td class="label">ID:</td>
         <td>{{ $item->idmaintenance }}</td>
     </tr>
     <tr>
-        <td class="label">TIPO DE RECURSO</td>
+        <td class="label">TIPO DE RECURSO:</td>
         <td>{{ $item->asset_type_name ?: '-' }}</td>
-        <td class="label">N.º DE SERIE</td>
+        <td class="label">N.º DE SERIE:</td>
         <td>{{ $item->serial ?: '-' }}</td>
     </tr>
     <tr>
-        <td class="label">MARCA</td>
+        <td class="label">MARCA:</td>
         <td>{{ $item->brand ?: '-' }}</td>
-        <td class="label">FECHA DE COMPRA</td>
+        <td class="label">FECHA DE COMPRA:</td>
         <td>{{ $formatDate($item->datepurchase) }}</td>
     </tr>
     <tr>
-        <td class="label">PROVEEDOR</td>
+        <td class="label">PROVEEDOR:</td>
         <td>-</td>
-        <td class="label">MODELO</td>
+        <td class="label">MODELO:</td>
         <td>{{ $item->model ?: '-' }}</td>
     </tr>
     <tr>
-        <td class="label">PROCESADOR</td>
+        <td class="label">PROCESADOR:</td>
         <td>{{ $item->processor ?: '-' }}</td>
-        <td class="label">RAM</td>
+        <td class="label">RAM:</td>
         <td>{{ $formatRam($item->ram) }}</td>
     </tr>
     <tr>
-        <td class="label">DISCO SSD</td>
+        <td class="label">DISCO SSD:</td>
         <td>{{ $formatStorage($item->ssddisk) }}</td>
-        <td class="label">DISCO HDD</td>
+        <td class="label">DISCO HDD:</td>
         <td>{{ $formatStorage($item->hdddisk) }}</td>
     </tr>
     <tr>
-        <td class="label">DESCRIPCIÓN</td>
+        <td class="label">DESCRIPCIÓN:</td>
         <td colspan="3" class="line-area-sm">
             <div class="line-row">{{ $description !== '' ? $description : '-' }}</div>
             <div class="line-row"></div>
@@ -380,7 +390,7 @@
     </table>
 
     <div class="section-title">DESCRIPCIÓN DE MANTENIMIENTO</div>
-    <table class="grid">
+    <table class="grid maintenance-grid">
     <colgroup>
         <col style="width: 22%">
         <col style="width: 6%">
@@ -390,31 +400,31 @@
         <col style="width: 32%">
     </colgroup>
     <tr>
-        <td class="label">PREVENTIVO</td>
+        <td class="label">PREVENTIVO:</td>
         <td class="checkbox-cell"><span class="check-box">{{ $isPreventive ? 'X' : '' }}</span></td>
-        <td class="label">CORRECTIVO</td>
+        <td class="label">CORRECTIVO:</td>
         <td class="checkbox-cell"><span class="check-box">{{ $isCorrective ? 'X' : '' }}</span></td>
-        <td class="label">ÁREA</td>
+        <td class="label">ÁREA:</td>
         <td class="value-italic">{{ $item->agencie_name ?: '-' }}<br><span class="tiny">{{ $item->location ?: '' }}</span></td>
     </tr>
     <tr>
-        <td class="label">IP</td>
+        <td class="label">IP:</td>
         <td colspan="2">-</td>
-        <td class="label">HOSTNAME</td>
+        <td class="label">HOSTNAME:</td>
         <td colspan="2">-</td>
     </tr>
     <tr>
-        <td class="label">DIAGNÓSTICO</td>
+        <td class="label">DIAGNÓSTICO:</td>
         <td colspan="3" class="line-area">
             @foreach($diagLines as $line)
                 <div class="line-row">{{ $line }}</div>
             @endforeach
         </td>
-        <td class="label center">FECHA DE MANTENIMIENTO</td>
+        <td class="label center">FECHA DE MANTENIMIENTO:</td>
         <td class="value-italic">{{ $formatDate($item->date) }}</td>
     </tr>
     <tr>
-        <td class="label">TRABAJO REALIZADO</td>
+        <td class="label">TRABAJO REALIZADO:</td>
         <td colspan="5" class="bullets">
             @foreach($workRows as $line)
                 @if($line !== '')
@@ -426,7 +436,7 @@
         </td>
     </tr>
     <tr>
-        <td class="label">OBSERVACIONES</td>
+        <td class="label">OBSERVACIONES:</td>
         <td colspan="5" class="bullets">
             @foreach($obsRows as $line)
                 @if($line !== '')

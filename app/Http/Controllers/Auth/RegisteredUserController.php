@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,24 +35,28 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'idperson' => [
+                'required',
+                'integer',
+                Rule::exists('people', 'idperson'),
+                Rule::unique('users', 'idperson'),
+            ],
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
-            $user = User::create([
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-            ]);
+            $person = Person::query()->findOrFail($validated['idperson']);
 
-            $person = Person::create([
-                'name' => $validated['name'],
-                'employment' => 'Sin cargo',
-                'state' => 1,
-            ]);
-
+            $user = new User();
+            $user->email = $validated['email'];
+            $user->password = Hash::make($validated['password']);
             $user->idperson = $person->idperson;
+
+            if (Schema::hasColumn('users', 'name')) {
+                $user->name = $person->name;
+            }
+
             $user->save();
 
             return $user;
