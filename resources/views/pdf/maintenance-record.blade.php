@@ -258,21 +258,26 @@
     $logoDataUri = null;
     $canRenderPng = extension_loaded('gd') || function_exists('gd_info');
     $logoCandidates = [
-        public_path('ccb_logo_fondo_blanco_complero.png'),
-        public_path('ccb_logo_transparente.png'),
-        public_path('ccb_logo_fondo_verde.png'),
+        ['path' => public_path('ccb_logo_fondo_blanco_complero.jpg'), 'requiresGd' => false],
+        ['path' => public_path('ccb_logo_fondo_blanco_complero.png'), 'requiresGd' => true],
+        ['path' => public_path('ccb_logo_transparente.png'), 'requiresGd' => true],
+        ['path' => public_path('ccb_logo_fondo_verde.png'), 'requiresGd' => true],
     ];
 
-    if ($canRenderPng) {
-        foreach ($logoCandidates as $logoPath) {
-            if (is_file($logoPath) && is_readable($logoPath)) {
-                $mime = mime_content_type($logoPath) ?: 'image/png';
-                $content = file_get_contents($logoPath);
+    foreach ($logoCandidates as $candidate) {
+        if ($candidate['requiresGd'] && ! $canRenderPng) {
+            continue;
+        }
 
-                if ($content !== false) {
-                    $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode($content);
-                    break;
-                }
+        $logoPath = $candidate['path'];
+
+        if (is_file($logoPath) && is_readable($logoPath)) {
+            $mime = mime_content_type($logoPath) ?: 'image/jpeg';
+            $content = file_get_contents($logoPath);
+
+            if ($content !== false) {
+                $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode($content);
+                break;
             }
         }
     }
