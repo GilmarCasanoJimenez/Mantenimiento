@@ -17,11 +17,21 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
     const [filters, setFilters] = useState({
         name: '',
         description: '',
+        isInformatic: '',
     });
+
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            description: '',
+            isInformatic: '',
+        });
+    };
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         name: '',
         description: '',
+        is_informatic: false,
     });
 
     const {
@@ -35,11 +45,13 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
     } = useForm({
         name: '',
         description: '',
+        is_informatic: false,
     });
 
     const filteredAssetTypes = assetTypes.filter((item) => (
         (item.name ?? '').toLowerCase().includes(filters.name.toLowerCase())
         && (item.description ?? '').toLowerCase().includes(filters.description.toLowerCase())
+        && (filters.isInformatic === '' || String(Boolean(item.is_informatic)) === filters.isInformatic)
     ));
 
     const openCreateModal = () => setShowCreateModal(true);
@@ -54,6 +66,7 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
         setEditingId(item.idtypefixedasset);
         setEditData('name', item.name ?? '');
         setEditData('description', item.description ?? '');
+        setEditData('is_informatic', Boolean(item.is_informatic));
         setShowEditModal(true);
     };
 
@@ -93,11 +106,12 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
             return;
         }
 
-        const headers = ['#', 'Nombre', 'Descripción'];
+        const headers = ['#', 'Nombre', 'Descripción', 'Informático'];
         const rows = filteredAssetTypes.map((item, index) => [
             String(index + 1),
             item.name ?? '-',
             item.description ?? '-',
+            item.is_informatic ? 'Sí' : 'No',
         ].join('\t'));
 
         const text = [headers.join('\t'), ...rows].join('\n');
@@ -116,6 +130,7 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
         setCopiedRowsCount(filteredAssetTypes.length);
         setShowCopyModal(true);
     };
+    const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
 
     return (
         <AuthenticatedLayout
@@ -128,40 +143,55 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
                 <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
-                            <div className="mb-3 flex justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={copyTableToClipboard}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                    Copiar tabla
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openCreateModal}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 5v14M5 12h14" />
-                                    </svg>
-                                    Nuevo tipo
-                                </button>
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={clearFilters}
+                                        disabled={!hasActiveFilters}
+                                        className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white ${hasActiveFilters ? 'bg-gray-500 hover:bg-gray-600' : 'cursor-not-allowed bg-gray-400 opacity-70'}`}
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M3 6h18" />
+                                            <path d="M6 12h12" />
+                                            <path d="M10 18h4" />
+                                        </svg>
+                                        Limpiar filtros
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={copyTableToClipboard}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                        Copiar tabla
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={openCreateModal}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        Nuevo tipo
+                                    </button>
+                                </div>
                             </div>
 
-                            {filteredAssetTypes.length === 0 ? (
-                                <p>No hay tipos de activo registrados.</p>
-                            ) : (
-                                <div className="overflow-x-auto">
+                            <div className="overflow-x-auto">
                                     <table className="w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
                                         <thead className="bg-gray-50 dark:bg-gray-900/40">
                                             <tr>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">#</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Nombre</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Descripción</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Informático</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
                                             </tr>
                                             <tr>
@@ -184,34 +214,55 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
                                                         onChange={(event) => setFilters((prev) => ({ ...prev, description: event.target.value }))}
                                                     />
                                                 </th>
+                                                <th className="px-4 py-2">
+                                                    <select
+                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                                        value={filters.isInformatic}
+                                                        onChange={(event) => setFilters((prev) => ({ ...prev, isInformatic: event.target.value }))}
+                                                    >
+                                                        <option value="">Todos</option>
+                                                        <option value="true">Sí</option>
+                                                        <option value="false">No</option>
+                                                    </select>
+                                                </th>
                                                 <th className="px-4 py-2" />
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {filteredAssetTypes.map((item, index) => (
-                                                <tr key={item.idtypefixedasset}>
-                                                    <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{item.name}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{item.description ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openEditModal(item)}
-                                                            className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                                                        >
-                                                            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                <path d="M12 20h9" />
-                                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                                                            </svg>
-                                                            Modificar
-                                                        </button>
+                                            {filteredAssetTypes.length > 0 ? (
+                                                filteredAssetTypes.map((item, index) => (
+                                                    <tr key={item.idtypefixedasset}>
+                                                        <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{item.name}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{item.description ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top">{item.is_informatic ? 'Sí' : 'No'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openEditModal(item)}
+                                                                className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                            >
+                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M12 20h9" />
+                                                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                                </svg>
+                                                                Modificar
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
+                                                        {hasActiveFilters
+                                                            ? 'No hay resultados para los filtros aplicados.'
+                                                            : 'No hay tipos de activo registrados.'}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -258,6 +309,17 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
                             />
                             <InputError message={errors.description} className="mt-2" />
                         </div>
+
+                        <div className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700">
+                            <InputLabel htmlFor="is_informatic" value="Activo informático" />
+                            <input
+                                id="is_informatic"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                checked={Boolean(data.is_informatic)}
+                                onChange={(event) => setData('is_informatic', event.target.checked)}
+                            />
+                        </div>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-2">
@@ -293,6 +355,17 @@ export default function AssetTypesList({ auth, assetTypes = [] }) {
                                 onChange={(event) => setEditData('description', event.target.value)}
                             />
                             <InputError message={editErrors.description} className="mt-2" />
+                        </div>
+
+                        <div className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700">
+                            <InputLabel htmlFor="edit_is_informatic" value="Activo informático" />
+                            <input
+                                id="edit_is_informatic"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                checked={Boolean(editData.is_informatic)}
+                                onChange={(event) => setEditData('is_informatic', event.target.checked)}
+                            />
                         </div>
                     </div>
 

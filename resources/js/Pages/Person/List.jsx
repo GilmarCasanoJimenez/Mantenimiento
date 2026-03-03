@@ -23,6 +23,15 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
         state: 'Activo',
     });
 
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            employment: '',
+            hasUser: '',
+            state: 'Activo',
+        });
+    };
+
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm({
             name: '',
@@ -155,6 +164,7 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
             && (filters.state === '' || personState === filters.state)
         );
     });
+    const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
 
     const formatDateOnly = (value) => {
         if (!value) {
@@ -228,34 +238,48 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                 <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
-                            <div className="mb-3 flex justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={copyTableToClipboard}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                    Copiar tabla
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openCreateModal}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 5v14M5 12h14" />
-                                    </svg>
-                                    Nuevo funcionario
-                                </button>
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={clearFilters}
+                                        disabled={!hasActiveFilters}
+                                        className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white ${hasActiveFilters ? 'bg-gray-500 hover:bg-gray-600' : 'cursor-not-allowed bg-gray-400 opacity-70'}`}
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M3 6h18" />
+                                            <path d="M6 12h12" />
+                                            <path d="M10 18h4" />
+                                        </svg>
+                                        Limpiar filtros
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={copyTableToClipboard}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                        Copiar tabla
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={openCreateModal}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        Nuevo funcionario
+                                    </button>
+                                </div>
                             </div>
 
-                            {filteredPersons.length === 0 ? (
-                                <p>No hay funcionarios registrados.</p>
-                            ) : (
-                                <div className="overflow-x-auto">
+                            <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                         <thead className="bg-gray-50 dark:bg-gray-900/40">
                                             <tr>
@@ -314,62 +338,71 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {filteredPersons.map((person, index) => (
-                                                <tr key={person.idperson}>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{index + 1}</td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{person.name}</td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{person.employment}</td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{person.user_id ? 'Sí' : 'No'}</td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                                                        {person.state === 1 ? 'Activo' : 'Inactivo'}
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">{formatDateOnly(person.updated_at)}</td>
-                                                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openAssignedAssetsModal(person)}
-                                                                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
-                                                            >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <rect x="3" y="4" width="18" height="14" rx="2" />
-                                                                    <path d="M7 20h10" />
-                                                                </svg>
-                                                                Activos asignados
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openEditModal(person)}
-                                                                className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
-                                                            >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M12 20h9" />
-                                                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                                                                </svg>
-                                                                Modificar
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleToggleState(person)}
-                                                                className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white ${person.state === 1 ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                                                            >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    {person.state === 1 ? (
-                                                                        <path d="M18 6L6 18M6 6l12 12" />
-                                                                    ) : (
-                                                                        <path d="M20 6L9 17l-5-5" />
-                                                                    )}
-                                                                </svg>
-                                                                {person.state === 1 ? 'Desactivar' : 'Activar'}
-                                                            </button>
-                                                        </div>
+                                            {filteredPersons.length > 0 ? (
+                                                filteredPersons.map((person, index) => (
+                                                    <tr key={person.idperson}>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{index + 1}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{person.name}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{person.employment}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{person.user_id ? 'Sí' : 'No'}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                                                            {person.state === 1 ? 'Activo' : 'Inactivo'}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{formatDateOnly(person.updated_at)}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openAssignedAssetsModal(person)}
+                                                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                                                                >
+                                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <rect x="3" y="4" width="18" height="14" rx="2" />
+                                                                        <path d="M7 20h10" />
+                                                                    </svg>
+                                                                    Activos asignados
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openEditModal(person)}
+                                                                    className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                                                >
+                                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M12 20h9" />
+                                                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                                    </svg>
+                                                                    Modificar
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleToggleState(person)}
+                                                                    className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white ${person.state === 1 ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                                                >
+                                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        {person.state === 1 ? (
+                                                                            <path d="M18 6L6 18M6 6l12 12" />
+                                                                        ) : (
+                                                                            <path d="M20 6L9 17l-5-5" />
+                                                                        )}
+                                                                    </svg>
+                                                                    {person.state === 1 ? 'Desactivar' : 'Activar'}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
+                                                        {hasActiveFilters
+                                                            ? 'No hay resultados para los filtros aplicados.'
+                                                            : 'No hay funcionarios registrados.'}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
                         </div>
                     </div>
                 </div>

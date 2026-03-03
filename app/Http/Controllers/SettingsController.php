@@ -57,7 +57,7 @@ class SettingsController extends Controller
     public function assetTypesIndex(): Response
     {
         $assetTypes = DB::table('typefixedasset')
-            ->select('idtypefixedasset', 'name', 'description')
+            ->select('idtypefixedasset', 'name', 'description', 'is_informatic')
             ->orderBy('name')
             ->get();
 
@@ -71,11 +71,13 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
+            'is_informatic' => ['nullable', 'boolean'],
         ]);
 
         DB::table('typefixedasset')->insert([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'is_informatic' => (bool) ($validated['is_informatic'] ?? false),
         ]);
 
         return redirect()->route('settings.asset-types.list');
@@ -86,6 +88,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
+            'is_informatic' => ['nullable', 'boolean'],
         ]);
 
         DB::table('typefixedasset')
@@ -93,6 +96,7 @@ class SettingsController extends Controller
             ->update([
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
+                'is_informatic' => (bool) ($validated['is_informatic'] ?? false),
             ]);
 
         return redirect()->route('settings.asset-types.list');

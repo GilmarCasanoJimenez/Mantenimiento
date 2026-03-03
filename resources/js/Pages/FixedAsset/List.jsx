@@ -8,13 +8,17 @@ import DatePickerInput from '@/Components/DatePickerInput';
 import TextInput from '@/Components/TextInput';
 import { Combobox, Listbox, Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
-export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = [], agencies = [], people = [] }) {
+export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = [], agencies = [], people = [], informaticCreation = null }) {
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showInformaticModal, setShowInformaticModal] = useState(false);
+    const [isInformaticModalRequired, setIsInformaticModalRequired] = useState(false);
     const [editingAssetId, setEditingAssetId] = useState(null);
+    const [editingAssetSnapshot, setEditingAssetSnapshot] = useState(null);
+    const [informaticAsset, setInformaticAsset] = useState(null);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
     const [typeQuery, setTypeQuery] = useState('');
     const [personQuery, setPersonQuery] = useState('');
@@ -28,18 +32,28 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         state: '',
     });
 
+    const clearFilters = () => {
+        setFilters({
+            brand: '',
+            model: '',
+            type: '',
+            person: '',
+            state: '',
+        });
+    };
+
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         asset_code: '',
         idtypefixedasset: '',
         datepurchase: '',
         brand: '',
         model: '',
+        description: '',
         color: '',
         serial: '',
         idagencie: '',
         location: '',
         idperson: '',
-        state: '1',
     });
 
     const {
@@ -56,13 +70,48 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         datepurchase: '',
         brand: '',
         model: '',
+        description: '',
         color: '',
         serial: '',
+        idhardware: null,
         idagencie: '',
         location: '',
         idperson: '',
         state: '1',
     });
+
+    const {
+        data: informaticData,
+        setData: setInformaticData,
+        post: postInformaticDetails,
+        processing: informaticProcessing,
+        errors: informaticErrors,
+        reset: resetInformatic,
+        clearErrors: clearInformaticErrors,
+    } = useForm({
+        username: '',
+        segment: '',
+        ipadress: '',
+        hostname: '',
+        operativesystem: '',
+        antivirus: '',
+        processor: '',
+        ram: '',
+        motherboard: '',
+        graphicscard: '',
+        ssddisk: '',
+        hdddisk: '',
+    });
+
+    useEffect(() => {
+        if (informaticCreation?.idfixedasset) {
+            setInformaticAsset(informaticCreation);
+            setIsInformaticModalRequired(true);
+            resetInformatic();
+            clearInformaticErrors();
+            setShowInformaticModal(true);
+        }
+    }, [informaticCreation, resetInformatic, clearInformaticErrors]);
 
     const openCreateModal = () => {
         setShowCreateModal(true);
@@ -78,13 +127,16 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
 
     const openEditModal = (asset) => {
         setEditingAssetId(asset.idfixedasset);
+        setEditingAssetSnapshot(asset);
         setEditData('asset_code', asset.asset_code ?? '');
         setEditData('idtypefixedasset', asset.idtypefixedasset ? String(asset.idtypefixedasset) : '');
         setEditData('datepurchase', asset.datepurchase ?? '');
         setEditData('brand', asset.brand ?? '');
         setEditData('model', asset.model ?? '');
+        setEditData('description', asset.description ?? '');
         setEditData('color', asset.color ?? '');
         setEditData('serial', asset.serial ?? '');
+        setEditData('idhardware', asset.idhardware ?? null);
         setEditData('idagencie', asset.idagencie ? String(asset.idagencie) : '');
         setEditData('location', asset.location ?? '');
         setEditData('idperson', asset.idperson ? String(asset.idperson) : '');
@@ -97,6 +149,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
     const closeEditModal = () => {
         setShowEditModal(false);
         setEditingAssetId(null);
+        setEditingAssetSnapshot(null);
         setEditTypeQuery('');
         setEditPersonQuery('');
         clearEditErrors();
@@ -125,6 +178,64 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         });
     };
 
+    const submitCreateFromInformaticButton = () => {
+        post(route('fixedasset.store'), {
+            preserveScroll: true,
+            onSuccess: () => closeCreateModal(),
+        });
+    };
+
+    const closeInformaticModal = () => {
+        if (isInformaticModalRequired) {
+            return;
+        }
+
+        setShowInformaticModal(false);
+        setInformaticAsset(null);
+        setIsInformaticModalRequired(false);
+        clearInformaticErrors();
+        resetInformatic();
+    };
+
+    const openInformaticModalForEdit = () => {
+        if (!editingAssetSnapshot || !selectedEditType?.is_informatic) {
+            return;
+        }
+
+        setInformaticAsset({
+            idfixedasset: editingAssetSnapshot.idfixedasset,
+            asset_code: editingAssetSnapshot.asset_code,
+        });
+        setIsInformaticModalRequired(false);
+        setInformaticData('username', editingAssetSnapshot.network_username ?? '');
+        setInformaticData('segment', editingAssetSnapshot.network_segment ?? '');
+        setInformaticData('ipadress', editingAssetSnapshot.network_ipadress ?? '');
+        setInformaticData('hostname', editingAssetSnapshot.network_hostname ?? '');
+        setInformaticData('operativesystem', editingAssetSnapshot.network_operativesystem ?? '');
+        setInformaticData('antivirus', editingAssetSnapshot.network_antivirus ?? '');
+        setInformaticData('processor', editingAssetSnapshot.hardware_processor ?? '');
+        setInformaticData('ram', editingAssetSnapshot.hardware_ram ?? '');
+        setInformaticData('motherboard', editingAssetSnapshot.hardware_motherboard ?? '');
+        setInformaticData('graphicscard', editingAssetSnapshot.hardware_graphicscard ?? '');
+        setInformaticData('ssddisk', editingAssetSnapshot.hardware_ssddisk ?? '');
+        setInformaticData('hdddisk', editingAssetSnapshot.hardware_hdddisk ?? '');
+        clearInformaticErrors();
+        setShowInformaticModal(true);
+    };
+
+    const submitInformaticDetails = (event) => {
+        event.preventDefault();
+
+        if (!informaticAsset?.idfixedasset) {
+            return;
+        }
+
+        postInformaticDetails(route('fixedasset.store-informatic-details', informaticAsset.idfixedasset), {
+            preserveScroll: true,
+            onSuccess: () => closeInformaticModal(),
+        });
+    };
+
     const filteredAssets = fixedAssets.filter((asset) => {
         const stateLabel = asset.state === 1 ? 'Alta' : 'Baja';
 
@@ -136,6 +247,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
             && (filters.state === '' || stateLabel === filters.state)
         );
     });
+    const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
 
     const formatLastModified = (value) => {
         if (!value) {
@@ -167,7 +279,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
             return;
         }
 
-        const headers = ['#', 'Código', 'Tipo', 'Marca', 'Modelo', 'Fecha compra', 'Serial', 'Responsable', 'Agencia', 'Ubicación', 'Estado', 'Últ. modif.'];
+        const headers = ['#', 'Código', 'Tipo', 'Marca', 'Modelo', 'Descripción', 'Fecha compra', 'Serial', 'Responsable', 'Agencia', 'Ubicación', 'Estado', 'Últ. modif.'];
         const rows = filteredAssets.map((asset, index) => {
             const stateLabel = asset.state === 1 ? 'Alta' : 'Baja';
 
@@ -177,6 +289,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                 asset.type_name ?? '-',
                 asset.brand ?? '-',
                 asset.model ?? '-',
+                asset.description ?? '-',
                 formatLastModified(asset.datepurchase),
                 asset.serial ?? '-',
                 asset.person_name ?? '-',
@@ -238,34 +351,48 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                 <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
-                            <div className="mb-3 flex justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={copyTableToClipboard}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                    Copiar tabla
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openCreateModal}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
-                                >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 5v14M5 12h14" />
-                                    </svg>
-                                    Nuevo activo
-                                </button>
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={clearFilters}
+                                        disabled={!hasActiveFilters}
+                                        className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white ${hasActiveFilters ? 'bg-gray-500 hover:bg-gray-600' : 'cursor-not-allowed bg-gray-400 opacity-70'}`}
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M3 6h18" />
+                                            <path d="M6 12h12" />
+                                            <path d="M10 18h4" />
+                                        </svg>
+                                        Limpiar filtros
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={copyTableToClipboard}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-slate-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                        Copiar tabla
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={openCreateModal}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700"
+                                    >
+                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        Nuevo activo
+                                    </button>
+                                </div>
                             </div>
 
-                            {filteredAssets.length === 0 ? (
-                                <p>No hay activos fijos registrados.</p>
-                            ) : (
-                                <div className="overflow-x-auto">
+                            <div className="overflow-x-auto">
                                     <table className="w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
                                         <thead className="bg-gray-50 dark:bg-gray-900/40">
                                             <tr>
@@ -274,6 +401,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Tipo</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Marca</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Modelo</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Descripción</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Fecha compra</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Responsable</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Agencia</th>
@@ -313,6 +441,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                                     />
                                                 </th>
                                                 <th className="px-4 py-2" />
+                                                <th className="px-4 py-2" />
                                                 <th className="px-4 py-2">
                                                     <input
                                                         type="text"
@@ -340,40 +469,50 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {filteredAssets.map((asset, index) => (
-                                                <tr key={asset.idfixedasset}>
-                                                    <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.asset_code ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.type_name ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.brand}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.model}</td>
-                                                    <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatLastModified(asset.datepurchase)}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.person_name ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.agencie_name ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top break-words">{asset.location}</td>
-                                                    <td className="px-4 py-3 text-sm align-top">{asset.state === 1 ? 'Alta' : 'Baja'}</td>
-                                                    <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatLastModified(asset.updated_at)}</td>
-                                                    <td className="px-4 py-3 text-sm align-top">
-                                                        <div className="flex flex-col items-start gap-2 xl:flex-row xl:items-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openEditModal(asset)}
-                                                                className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                                                            >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M12 20h9" />
-                                                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                                                                </svg>
-                                                                Modificar
-                                                            </button>
-                                                        </div>
+                                            {filteredAssets.length > 0 ? (
+                                                filteredAssets.map((asset, index) => (
+                                                    <tr key={asset.idfixedasset}>
+                                                        <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.asset_code ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.type_name ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.brand}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.model}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.description ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatLastModified(asset.datepurchase)}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.person_name ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.agencie_name ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{asset.location}</td>
+                                                        <td className="px-4 py-3 text-sm align-top">{asset.state === 1 ? 'Alta' : 'Baja'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatLastModified(asset.updated_at)}</td>
+                                                        <td className="px-4 py-3 text-sm align-top">
+                                                            <div className="flex flex-col items-start gap-2 xl:flex-row xl:items-center">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openEditModal(asset)}
+                                                                    className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                                >
+                                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M12 20h9" />
+                                                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                                    </svg>
+                                                                    Modificar
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={13} className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
+                                                        {hasActiveFilters
+                                                            ? 'No hay resultados para los filtros aplicados.'
+                                                            : 'No hay activos fijos registrados.'}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -500,6 +639,17 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                 onChange={(event) => setData('model', event.target.value)}
                             />
                             <InputError message={errors.model} className="mt-2" />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <InputLabel htmlFor="description" value="Descripción (opcional)" />
+                            <TextInput
+                                id="description"
+                                className="mt-1 block w-full"
+                                value={data.description}
+                                onChange={(event) => setData('description', event.target.value)}
+                            />
+                            <InputError message={errors.description} className="mt-2" />
                         </div>
 
                         <div>
@@ -632,25 +782,111 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                             <InputError message={errors.idperson} className="mt-2" />
                         </div>
 
-                        <div>
-                            <InputLabel htmlFor="state" value="Estado" />
-                            <select
-                                id="state"
-                                className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                value={data.state}
-                                onChange={(event) => setData('state', event.target.value)}
-                                required
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-2">
+                        {selectedType?.is_informatic ? (
+                            <button
+                                type="button"
+                                onClick={submitCreateFromInformaticButton}
+                                disabled={processing}
+                                className="inline-flex items-center gap-1.5 rounded-md bg-sky-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                <option value="1">Activo</option>
-                                <option value="0">Inactivo</option>
-                            </select>
-                            <InputError message={errors.state} className="mt-2" />
+                                Agregar datos TI
+                            </button>
+                        ) : null}
+                        <SecondaryButton type="button" onClick={closeCreateModal}>Cancelar</SecondaryButton>
+                        <PrimaryButton disabled={processing}>Guardar activo</PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal show={showInformaticModal} onClose={closeInformaticModal} maxWidth="4xl">
+                <form onSubmit={submitInformaticDetails} className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Datos de hardware y red</h2>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                        {`El activo ${informaticAsset?.asset_code ?? ''} es informático. Completa sus datos de hardware y red para asociarlo correctamente.`}
+                    </p>
+
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="network_username" value="Usuario de red" />
+                            <TextInput id="network_username" className="mt-1 block w-full" value={informaticData.username} onChange={(event) => setInformaticData('username', event.target.value)} required />
+                            <InputError message={informaticErrors.username} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_segment" value="Segmento" />
+                            <TextInput id="network_segment" className="mt-1 block w-full" value={informaticData.segment} onChange={(event) => setInformaticData('segment', event.target.value)} required />
+                            <InputError message={informaticErrors.segment} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_ipadress" value="Dirección IP" />
+                            <TextInput id="network_ipadress" className="mt-1 block w-full" value={informaticData.ipadress} onChange={(event) => setInformaticData('ipadress', event.target.value)} required />
+                            <InputError message={informaticErrors.ipadress} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_hostname" value="Hostname" />
+                            <TextInput id="network_hostname" className="mt-1 block w-full" value={informaticData.hostname} onChange={(event) => setInformaticData('hostname', event.target.value)} required />
+                            <InputError message={informaticErrors.hostname} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_operativesystem" value="Sistema operativo" />
+                            <TextInput id="network_operativesystem" className="mt-1 block w-full" value={informaticData.operativesystem} onChange={(event) => setInformaticData('operativesystem', event.target.value)} required />
+                            <InputError message={informaticErrors.operativesystem} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_antivirus" value="Antivirus" />
+                            <TextInput id="network_antivirus" className="mt-1 block w-full" value={informaticData.antivirus} onChange={(event) => setInformaticData('antivirus', event.target.value)} required />
+                            <InputError message={informaticErrors.antivirus} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_processor" value="Procesador" />
+                            <TextInput id="hardware_processor" className="mt-1 block w-full" value={informaticData.processor} onChange={(event) => setInformaticData('processor', event.target.value)} required />
+                            <InputError message={informaticErrors.processor} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_ram" value="RAM" />
+                            <TextInput id="hardware_ram" className="mt-1 block w-full" value={informaticData.ram} onChange={(event) => setInformaticData('ram', event.target.value)} required />
+                            <InputError message={informaticErrors.ram} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_motherboard" value="Motherboard (opcional)" />
+                            <TextInput id="hardware_motherboard" className="mt-1 block w-full" value={informaticData.motherboard} onChange={(event) => setInformaticData('motherboard', event.target.value)} />
+                            <InputError message={informaticErrors.motherboard} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_graphicscard" value="Tarjeta gráfica (opcional)" />
+                            <TextInput id="hardware_graphicscard" className="mt-1 block w-full" value={informaticData.graphicscard} onChange={(event) => setInformaticData('graphicscard', event.target.value)} />
+                            <InputError message={informaticErrors.graphicscard} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_ssddisk" value="Disco SSD (opcional)" />
+                            <TextInput id="hardware_ssddisk" className="mt-1 block w-full" value={informaticData.ssddisk} onChange={(event) => setInformaticData('ssddisk', event.target.value)} />
+                            <InputError message={informaticErrors.ssddisk} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="hardware_hdddisk" value="Disco HDD (opcional)" />
+                            <TextInput id="hardware_hdddisk" className="mt-1 block w-full" value={informaticData.hdddisk} onChange={(event) => setInformaticData('hdddisk', event.target.value)} />
+                            <InputError message={informaticErrors.hdddisk} className="mt-2" />
                         </div>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-2">
-                        <SecondaryButton type="button" onClick={closeCreateModal}>Cancelar</SecondaryButton>
-                        <PrimaryButton disabled={processing}>Guardar activo</PrimaryButton>
+                        {!isInformaticModalRequired ? (
+                            <SecondaryButton type="button" onClick={closeInformaticModal}>Cerrar</SecondaryButton>
+                        ) : null}
+                        <PrimaryButton disabled={informaticProcessing}>Guardar datos TI</PrimaryButton>
                     </div>
                 </form>
             </Modal>
@@ -735,6 +971,12 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                             <InputLabel htmlFor="edit_model" value="Modelo (opcional)" />
                             <TextInput id="edit_model" className="mt-1 block w-full" value={editData.model} onChange={(event) => setEditData('model', event.target.value)} />
                             <InputError message={editErrors.model} className="mt-2" />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <InputLabel htmlFor="edit_description" value="Descripción (opcional)" />
+                            <TextInput id="edit_description" className="mt-1 block w-full" value={editData.description} onChange={(event) => setEditData('description', event.target.value)} />
+                            <InputError message={editErrors.description} className="mt-2" />
                         </div>
 
                         <div>
@@ -842,9 +1084,22 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                         </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-2">
-                        <SecondaryButton type="button" onClick={closeEditModal}>Cancelar</SecondaryButton>
-                        <PrimaryButton disabled={editProcessing}>Guardar cambios</PrimaryButton>
+                    <div className="mt-6 flex items-center justify-between gap-2">
+                        <div>
+                            {selectedEditType?.is_informatic ? (
+                                <button
+                                    type="button"
+                                    onClick={openInformaticModalForEdit}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-sky-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-sky-700"
+                                >
+                                    {editingAssetSnapshot?.idhardware ? 'Editar datos TI' : 'Agregar datos TI'}
+                                </button>
+                            ) : null}
+                        </div>
+                        <div className="flex gap-2">
+                            <SecondaryButton type="button" onClick={closeEditModal}>Cancelar</SecondaryButton>
+                            <PrimaryButton disabled={editProcessing}>Guardar cambios</PrimaryButton>
+                        </div>
                     </div>
                 </form>
             </Modal>

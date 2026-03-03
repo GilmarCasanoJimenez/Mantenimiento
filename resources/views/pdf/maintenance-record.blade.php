@@ -89,6 +89,12 @@
             font-weight: 700;
             text-transform: uppercase;
             background: #d9d9d9;
+            text-align: left;
+        }
+
+        .grid td.label,
+        .grid th.label {
+            vertical-align: middle;
         }
 
         .value-italic {
@@ -203,8 +209,16 @@
             font-size: 9px;
         }
 
+        .location-text {
+            font-weight: 400;
+        }
+
         .center {
             text-align: center;
+        }
+
+        .middle {
+            vertical-align: middle !important;
         }
     </style>
 </head>
@@ -410,13 +424,13 @@
         <td class="label">CORRECTIVO:</td>
         <td class="checkbox-cell"><span class="check-box">{{ $isCorrective ? 'X' : '' }}</span></td>
         <td class="label">ÁREA:</td>
-        <td class="value-italic">{{ $item->agencie_name ?: '-' }}<br><span class="tiny">{{ $item->location ?: '' }}</span></td>
+        <td class="value-italic">{{ $item->agencie_name ?: '-' }}<br><span class="tiny location-text">{{ $item->location ?: '' }}</span></td>
     </tr>
     <tr>
         <td class="label">IP:</td>
-        <td colspan="2">-</td>
+        <td colspan="2">{{ $item->ipadress ?: '-' }}</td>
         <td class="label">HOSTNAME:</td>
-        <td colspan="2">-</td>
+        <td colspan="2">{{ $item->hostname ?: '-' }}</td>
     </tr>
     <tr>
         <td class="label">DIAGNÓSTICO:</td>
@@ -426,7 +440,7 @@
             @endforeach
         </td>
         <td class="label center">FECHA DE MANTENIMIENTO:</td>
-        <td class="value-italic">{{ $formatDate($item->date) }}</td>
+        <td class="value-italic middle">{{ $formatDate($item->date) }}</td>
     </tr>
     <tr>
         <td class="label">TRABAJO REALIZADO:</td>

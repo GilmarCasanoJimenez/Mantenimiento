@@ -35,6 +35,7 @@ class MaintenanceController extends Controller
                 'm.observation',
                 'm.location',
                 'm.updated_at',
+                DB::raw('fa.asset_code as asset_code'),
                 DB::raw('COALESCE(tfa.name, "-") as asset_type_name'),
                 DB::raw('fa.brand as asset_brand'),
                 DB::raw('fa.model as asset_model'),
@@ -53,11 +54,19 @@ class MaintenanceController extends Controller
 
         $fixedAssets = DB::table('fixedasset as fa')
             ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
+            ->leftJoin('agencies as ag', 'ag.idagencie', '=', 'fa.idagencie')
+            ->leftJoin('people as p', 'p.idperson', '=', 'fa.idperson')
             ->select(
                 'fa.idfixedasset',
                 'fa.asset_code',
                 'fa.brand',
                 'fa.model',
+                'fa.idagencie',
+                'fa.idperson',
+                'fa.location',
+                DB::raw('COALESCE(ag.name, "-") as agencie_name'),
+                DB::raw('COALESCE(p.name, "-") as person_name'),
+                DB::raw('COALESCE(p.employment, "") as person_employment'),
                 DB::raw('tfa.name as type_name')
             )
             ->orderByDesc('fa.idfixedasset')
@@ -73,30 +82,19 @@ class MaintenanceController extends Controller
             ->orderBy('name')
             ->get();
 
-        $users = DB::table('users as u')
-            ->leftJoin('people as p', 'p.idperson', '=', 'u.idperson')
-            ->select(
-                'u.id',
-                'u.email',
-                DB::raw("COALESCE(p.name, 'Sin nombre') as name")
-            )
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Maintenance/List', [
             'maintenances' => $maintenances,
             'hardwareMaintenances' => $hardwareMaintenances,
             'fixedAssets' => $fixedAssets,
             'agencies' => $agencies,
             'people' => $people,
-            'users' => $users,
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'idhardwaremaintenance' => ['required', 'integer', 'exists:hardwaremaintenance,idhardwaremaintenance'],
+            'idhardwaremaintenance' => ['nullable', 'integer', 'exists:hardwaremaintenance,idhardwaremaintenance'],
             'type' => ['required', 'string', 'max:45'],
             'idfixedasset' => ['required', 'integer', 'exists:fixedasset,idfixedasset'],
             'date' => ['required', 'date'],
@@ -106,11 +104,28 @@ class MaintenanceController extends Controller
             'idagencie' => ['required', 'integer', 'exists:agencies,idagencie'],
             'location' => ['required', 'string', 'max:45'],
             'idperson' => ['required', 'integer', 'exists:people,idperson'],
-            'iduser' => ['required', 'integer', 'exists:users,id'],
         ]);
+
+        $userId = $request->user()?->id;
+
+        if (! $userId) {
+            abort(403);
+        }
+
+        $hardwareMaintenanceId = $validated['idhardwaremaintenance']
+            ?? DB::table('hardwaremaintenance')->value('idhardwaremaintenance');
+
+        if (! $hardwareMaintenanceId) {
+            return redirect()
+                ->back()
+                ->withErrors(['idhardwaremaintenance' => 'No hay hardware de mantenimiento disponible para registrar.'])
+                ->withInput();
+        }
 
         DB::table('maintenance')->insert([
             ...$validated,
+            'idhardwaremaintenance' => $hardwareMaintenanceId,
+            'iduser' => $userId,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -139,13 +154,19 @@ class MaintenanceController extends Controller
             'idagencie' => ['required', 'integer', 'exists:agencies,idagencie'],
             'location' => ['required', 'string', 'max:45'],
             'idperson' => ['required', 'integer', 'exists:people,idperson'],
-            'iduser' => ['required', 'integer', 'exists:users,id'],
         ]);
+
+        $userId = $request->user()?->id;
+
+        if (! $userId) {
+            abort(403);
+        }
 
         DB::table('maintenance')
             ->where('idmaintenance', $maintenance)
             ->update([
                 ...$validated,
+                'iduser' => $userId,
                 'updated_at' => now(),
             ]);
 
@@ -157,6 +178,8 @@ class MaintenanceController extends Controller
         $item = DB::table('maintenance as m')
             ->leftJoin('hardwaremaintenance as hm', 'hm.idhardwaremaintenance', '=', 'm.idhardwaremaintenance')
             ->leftJoin('fixedasset as fa', 'fa.idfixedasset', '=', 'm.idfixedasset')
+            ->leftJoin('hardware as hw', 'hw.idhardware', '=', 'fa.idhardware')
+            ->leftJoin('networks as nw', 'nw.idnetwork', '=', 'hw.idnetwork')
             ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
             ->leftJoin('agencies as ag', 'ag.idagencie', '=', 'm.idagencie')
             ->leftJoin('people as p', 'p.idperson', '=', 'm.idperson')
@@ -166,6 +189,7 @@ class MaintenanceController extends Controller
                 'm.idmaintenance',
                 'm.type',
                 'm.date',
+                'm.created_at as maintenance_created_at',
                 'm.diagnostic',
                 'm.workdone',
                 'm.observation',
@@ -181,10 +205,12 @@ class MaintenanceController extends Controller
                 DB::raw('COALESCE(ag.name, "-") as agencie_name'),
                 DB::raw('COALESCE(p.name, "-") as responsible_name'),
                 DB::raw('COALESCE(up.name, "Sin nombre") as maintenance_user_name'),
-                DB::raw('COALESCE(hm.processor, "-") as processor'),
-                'hm.ram',
-                'hm.ssddisk',
-                'hm.hdddisk'
+                DB::raw('COALESCE(hw.processor, hm.processor, "-") as processor'),
+                DB::raw('COALESCE(hw.ram, hm.ram) as ram'),
+                DB::raw('COALESCE(hw.ssddisk, hm.ssddisk) as ssddisk'),
+                DB::raw('COALESCE(hw.hdddisk, hm.hdddisk) as hdddisk'),
+                DB::raw('COALESCE(nw.ipadress, "-") as ipadress'),
+                DB::raw('COALESCE(nw.hostname, "-") as hostname')
             )
             ->where('m.idmaintenance', $maintenance)
             ->first();

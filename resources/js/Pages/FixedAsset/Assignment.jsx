@@ -17,7 +17,6 @@ export default function FixedAssetAssignment({ auth, assetTypes = [], agencies =
         idagencie: '',
         location: '',
         idperson: '',
-        state: '1',
     });
 
     const submit = (event) => {
@@ -157,20 +156,6 @@ export default function FixedAssetAssignment({ auth, assetTypes = [], agencies =
                                     <InputError message={errors.idperson} className="mt-2" />
                                 </div>
 
-                                <div>
-                                    <InputLabel htmlFor="state" value="Estado" />
-                                    <select
-                                        id="state"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                        value={data.state}
-                                        onChange={(event) => setData('state', event.target.value)}
-                                        required
-                                    >
-                                        <option value="1">Activo</option>
-                                        <option value="0">Inactivo</option>
-                                    </select>
-                                    <InputError message={errors.state} className="mt-2" />
-                                </div>
                             </div>
 
                             <div className="flex items-center gap-3 pt-2">

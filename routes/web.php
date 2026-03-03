@@ -35,6 +35,10 @@ Route::post('/activos-fijos', [FixedAssetController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('fixedasset.store');
 
+Route::post('/activos-fijos/{fixedasset}/informatic-details', [FixedAssetController::class, 'storeInformaticDetails'])
+    ->middleware(['auth', 'verified'])
+    ->name('fixedasset.store-informatic-details');
+
 Route::patch('/activos-fijos/{fixedasset}', [FixedAssetController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('fixedasset.update');
