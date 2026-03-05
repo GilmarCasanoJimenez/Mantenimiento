@@ -87,9 +87,9 @@ Route::get('/mantenimientos/{maintenance}/pdf', [MaintenanceController::class, '
     ->middleware(['auth', 'verified'])
     ->name('maintenance.report');
 
-Route::get('/mantenimientos/historial', function () {
-    return Inertia::render('Maintenance/History');
-})->middleware(['auth', 'verified'])->name('maintenance.history');
+Route::get('/mantenimientos/historial', [MaintenanceController::class, 'history'])
+    ->middleware(['auth', 'verified'])
+    ->name('maintenance.history');
 
 Route::get('/person', function () {
     return redirect()->route('person.list');

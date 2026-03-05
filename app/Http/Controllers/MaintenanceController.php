@@ -56,18 +56,27 @@ class MaintenanceController extends Controller
             ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
             ->leftJoin('agencies as ag', 'ag.idagencie', '=', 'fa.idagencie')
             ->leftJoin('people as p', 'p.idperson', '=', 'fa.idperson')
+            ->leftJoin('hardware as hw', 'hw.idhardware', '=', 'fa.idhardware')
             ->select(
                 'fa.idfixedasset',
                 'fa.asset_code',
                 'fa.brand',
                 'fa.model',
+                'fa.idhardware',
                 'fa.idagencie',
                 'fa.idperson',
                 'fa.location',
                 DB::raw('COALESCE(ag.name, "-") as agencie_name'),
                 DB::raw('COALESCE(p.name, "-") as person_name'),
                 DB::raw('COALESCE(p.employment, "") as person_employment'),
-                DB::raw('tfa.name as type_name')
+                DB::raw('tfa.name as type_name'),
+                DB::raw('COALESCE(tfa.is_informatic, 0) as type_is_informatic'),
+                DB::raw('hw.processor as hardware_processor'),
+                DB::raw('hw.ram as hardware_ram'),
+                DB::raw('hw.motherboard as hardware_motherboard'),
+                DB::raw('hw.graphicscard as hardware_graphicscard'),
+                DB::raw('hw.ssddisk as hardware_ssddisk'),
+                DB::raw('hw.hdddisk as hardware_hdddisk')
             )
             ->orderByDesc('fa.idfixedasset')
             ->get();
@@ -104,6 +113,12 @@ class MaintenanceController extends Controller
             'idagencie' => ['required', 'integer', 'exists:agencies,idagencie'],
             'location' => ['required', 'string', 'max:45'],
             'idperson' => ['required', 'integer', 'exists:people,idperson'],
+            'processor' => ['nullable', 'string', 'max:45'],
+            'ram' => ['nullable', 'string', 'max:45'],
+            'motherboard' => ['nullable', 'string', 'max:45'],
+            'graphicscard' => ['nullable', 'string', 'max:45'],
+            'ssddisk' => ['nullable', 'string', 'max:45'],
+            'hdddisk' => ['nullable', 'string', 'max:45'],
         ]);
 
         $userId = $request->user()?->id;
@@ -112,23 +127,109 @@ class MaintenanceController extends Controller
             abort(403);
         }
 
-        $hardwareMaintenanceId = $validated['idhardwaremaintenance']
-            ?? DB::table('hardwaremaintenance')->value('idhardwaremaintenance');
+        $asset = DB::table('fixedasset as fa')
+            ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
+            ->where('fa.idfixedasset', $validated['idfixedasset'])
+            ->select('fa.idfixedasset', 'fa.idhardware', DB::raw('COALESCE(tfa.is_informatic, 0) as type_is_informatic'))
+            ->first();
 
-        if (! $hardwareMaintenanceId) {
-            return redirect()
-                ->back()
-                ->withErrors(['idhardwaremaintenance' => 'No hay hardware de mantenimiento disponible para registrar.'])
-                ->withInput();
+        if (! $asset) {
+            abort(404);
         }
 
-        DB::table('maintenance')->insert([
-            ...$validated,
-            'idhardwaremaintenance' => $hardwareMaintenanceId,
-            'iduser' => $userId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $isInformatic = (bool) ($asset->type_is_informatic ?? false);
+        $currentHardware = null;
+        $networkSnapshot = $this->loadNetworkSnapshotForAsset((int) $validated['idfixedasset']);
+
+        if ($isInformatic) {
+            if (! $asset->idhardware) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['idfixedasset' => 'El activo informático no tiene hardware asociado.'])
+                    ->withInput();
+            }
+
+            $currentHardware = DB::table('hardware')
+                ->where('idhardware', $asset->idhardware)
+                ->first(['idhardware', 'processor', 'ram', 'motherboard', 'graphicscard', 'ssddisk', 'hdddisk']);
+
+            if (! $currentHardware) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['idfixedasset' => 'No se encontraron datos de hardware para este activo.'])
+                    ->withInput();
+            }
+        }
+
+        DB::transaction(function () use ($validated, $isInformatic, $currentHardware, $networkSnapshot, $userId): void {
+            if ($isInformatic && $currentHardware) {
+                $hardwareMaintenanceId = $this->createHardwareMaintenanceSnapshot([
+                    'processor' => $currentHardware->processor,
+                    'ram' => $currentHardware->ram,
+                    'motherboard' => $currentHardware->motherboard,
+                    'graphicscard' => $currentHardware->graphicscard,
+                    'ssddisk' => $currentHardware->ssddisk,
+                    'hdddisk' => $currentHardware->hdddisk,
+                ]);
+
+                $newHardware = [
+                    'processor' => $validated['processor'] ?? $currentHardware->processor,
+                    'ram' => $validated['ram'] ?? $currentHardware->ram,
+                    'motherboard' => $validated['motherboard'] ?? $currentHardware->motherboard,
+                    'graphicscard' => $validated['graphicscard'] ?? $currentHardware->graphicscard,
+                    'ssddisk' => $validated['ssddisk'] ?? $currentHardware->ssddisk,
+                    'hdddisk' => $validated['hdddisk'] ?? $currentHardware->hdddisk,
+                ];
+
+                $hasHardwareChanges = $this->hardwareValueChanged($currentHardware->processor, $newHardware['processor'])
+                    || $this->hardwareValueChanged($currentHardware->ram, $newHardware['ram'])
+                    || $this->hardwareValueChanged($currentHardware->motherboard, $newHardware['motherboard'])
+                    || $this->hardwareValueChanged($currentHardware->graphicscard, $newHardware['graphicscard'])
+                    || $this->hardwareValueChanged($currentHardware->ssddisk, $newHardware['ssddisk'])
+                    || $this->hardwareValueChanged($currentHardware->hdddisk, $newHardware['hdddisk']);
+
+                if ($hasHardwareChanges) {
+                    DB::table('hardware')
+                        ->where('idhardware', $currentHardware->idhardware)
+                        ->update([
+                            'processor' => $newHardware['processor'],
+                            'ram' => $newHardware['ram'],
+                            'motherboard' => $newHardware['motherboard'] ?: null,
+                            'graphicscard' => $newHardware['graphicscard'] ?: null,
+                            'ssddisk' => $newHardware['ssddisk'] ?: null,
+                            'hdddisk' => $newHardware['hdddisk'] ?: null,
+                            'updated_at' => now(),
+                        ]);
+                }
+            } else {
+                $hardwareMaintenanceId = $this->createHardwareMaintenanceSnapshot([
+                    'processor' => 'N/A',
+                    'ram' => '0',
+                    'motherboard' => 'N/A',
+                    'graphicscard' => 'N/A',
+                    'ssddisk' => '0',
+                    'hdddisk' => '0',
+                ]);
+            }
+
+            DB::table('maintenance')->insert([
+                'idhardwaremaintenance' => $hardwareMaintenanceId,
+                'type' => $validated['type'],
+                'idfixedasset' => $validated['idfixedasset'],
+                'date' => $validated['date'],
+                'diagnostic' => $validated['diagnostic'],
+                'workdone' => $validated['workdone'],
+                'observation' => $validated['observation'],
+                'idagencie' => $validated['idagencie'],
+                'location' => $validated['location'],
+                'ipadress' => $networkSnapshot['ipadress'],
+                'hostname' => $networkSnapshot['hostname'],
+                'idperson' => $validated['idperson'],
+                'iduser' => $userId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
 
         return redirect()->route('maintenance.list');
     }
@@ -162,10 +263,14 @@ class MaintenanceController extends Controller
             abort(403);
         }
 
+        $networkSnapshot = $this->loadNetworkSnapshotForAsset((int) $validated['idfixedasset']);
+
         DB::table('maintenance')
             ->where('idmaintenance', $maintenance)
             ->update([
                 ...$validated,
+                'ipadress' => $networkSnapshot['ipadress'],
+                'hostname' => $networkSnapshot['hostname'],
                 'iduser' => $userId,
                 'updated_at' => now(),
             ]);
@@ -205,12 +310,12 @@ class MaintenanceController extends Controller
                 DB::raw('COALESCE(ag.name, "-") as agencie_name'),
                 DB::raw('COALESCE(p.name, "-") as responsible_name'),
                 DB::raw('COALESCE(up.name, "Sin nombre") as maintenance_user_name'),
-                DB::raw('COALESCE(hw.processor, hm.processor, "-") as processor'),
-                DB::raw('COALESCE(hw.ram, hm.ram) as ram'),
-                DB::raw('COALESCE(hw.ssddisk, hm.ssddisk) as ssddisk'),
-                DB::raw('COALESCE(hw.hdddisk, hm.hdddisk) as hdddisk'),
-                DB::raw('COALESCE(nw.ipadress, "-") as ipadress'),
-                DB::raw('COALESCE(nw.hostname, "-") as hostname')
+                DB::raw('COALESCE(hm.processor, hw.processor, "-") as processor'),
+                DB::raw('COALESCE(hm.ram, hw.ram) as ram'),
+                DB::raw('COALESCE(hm.ssddisk, hw.ssddisk) as ssddisk'),
+                DB::raw('COALESCE(hm.hdddisk, hw.hdddisk) as hdddisk'),
+                DB::raw('COALESCE(m.ipadress, nw.ipadress, "-") as ipadress'),
+                DB::raw('COALESCE(m.hostname, nw.hostname, "-") as hostname')
             )
             ->where('m.idmaintenance', $maintenance)
             ->first();
@@ -229,5 +334,95 @@ class MaintenanceController extends Controller
             'isCorrective' => $isCorrective,
         ])->setPaper('letter', 'portrait')
             ->stream("hoja-mantenimiento-{$maintenance}.pdf");
+    }
+
+    public function history(): Response
+    {
+        $maintenanceCounts = DB::table('maintenance')
+            ->select('idfixedasset', DB::raw('COUNT(*) as maintenance_count'))
+            ->groupBy('idfixedasset');
+
+        $maintenanceWorkLog = DB::table('maintenance as m')
+            ->select(
+                'm.idfixedasset',
+                DB::raw("GROUP_CONCAT(CONCAT(DATE_FORMAT(m.date, '%d/%m/%Y'), ' - ', COALESCE(m.workdone, '-')) ORDER BY m.date DESC, m.idmaintenance DESC SEPARATOR ' || ') as work_log"),
+                DB::raw("GROUP_CONCAT(DATE_FORMAT(m.date, '%Y-%m-%d') ORDER BY m.date DESC, m.idmaintenance DESC SEPARATOR '||') as maintenance_dates")
+            )
+            ->groupBy('m.idfixedasset');
+
+        $latestMaintenanceByAsset = DB::table('maintenance as m')
+            ->select('m.idfixedasset', DB::raw('MAX(m.idmaintenance) as last_idmaintenance'))
+            ->groupBy('m.idfixedasset');
+
+        $history = DB::table('fixedasset as fa')
+            ->leftJoin('people as cp', 'cp.idperson', '=', 'fa.idperson')
+            ->joinSub($maintenanceCounts, 'mc', function ($join): void {
+                $join->on('mc.idfixedasset', '=', 'fa.idfixedasset');
+            })
+            ->leftJoinSub($maintenanceWorkLog, 'wl', function ($join): void {
+                $join->on('wl.idfixedasset', '=', 'fa.idfixedasset');
+            })
+            ->leftJoinSub($latestMaintenanceByAsset, 'lm', function ($join): void {
+                $join->on('lm.idfixedasset', '=', 'fa.idfixedasset');
+            })
+            ->leftJoin('maintenance as ml', 'ml.idmaintenance', '=', 'lm.last_idmaintenance')
+            ->leftJoin('users as u', 'u.id', '=', 'ml.iduser')
+            ->leftJoin('people as up', 'up.idperson', '=', 'u.idperson')
+            ->select(
+                'fa.idfixedasset',
+                DB::raw('fa.asset_code as asset_code'),
+                DB::raw('COALESCE(fa.description, "-") as asset_description'),
+                DB::raw('COALESCE(cp.name, "-") as current_person_name'),
+                DB::raw('COALESCE(mc.maintenance_count, 0) as maintenance_count'),
+                DB::raw('COALESCE(wl.work_log, "-") as work_log'),
+                DB::raw('COALESCE(wl.maintenance_dates, "") as maintenance_dates'),
+                DB::raw('COALESCE(up.name, "Sin nombre") as user_name')
+            )
+            ->orderBy('fa.asset_code')
+            ->get();
+
+        return Inertia::render('Maintenance/History', [
+            'history' => $history,
+        ]);
+    }
+
+    private function createHardwareMaintenanceSnapshot(array $hardwareData): int
+    {
+        return (int) DB::table('hardwaremaintenance')->insertGetId([
+            'processor' => $this->normalizeHardwareText($hardwareData['processor'] ?? null, 'N/A'),
+            'ram' => $this->normalizeHardwareText($hardwareData['ram'] ?? null, '0'),
+            'motherboard' => $this->normalizeHardwareText($hardwareData['motherboard'] ?? null, 'N/A'),
+            'graphicscard' => $this->normalizeHardwareText($hardwareData['graphicscard'] ?? $hardwareData['graphiccard'] ?? null, 'N/A'),
+            'ssddisk' => $this->normalizeHardwareText($hardwareData['ssddisk'] ?? null, '0'),
+            'hdddisk' => $this->normalizeHardwareText($hardwareData['hdddisk'] ?? null, '0'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function normalizeHardwareText(mixed $value, string $default): string
+    {
+        $text = trim((string) ($value ?? ''));
+
+        return $text !== '' ? $text : $default;
+    }
+
+    private function hardwareValueChanged(mixed $current, mixed $new): bool
+    {
+        return trim((string) ($current ?? '')) !== trim((string) ($new ?? ''));
+    }
+
+    private function loadNetworkSnapshotForAsset(int $fixedAssetId): array
+    {
+        $network = DB::table('fixedasset as fa')
+            ->leftJoin('hardware as hw', 'hw.idhardware', '=', 'fa.idhardware')
+            ->leftJoin('networks as nw', 'nw.idnetwork', '=', 'hw.idnetwork')
+            ->where('fa.idfixedasset', $fixedAssetId)
+            ->first(['nw.ipadress', 'nw.hostname']);
+
+        return [
+            'ipadress' => $network?->ipadress,
+            'hostname' => $network?->hostname,
+        ];
     }
 }

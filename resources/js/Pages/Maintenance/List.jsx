@@ -11,6 +11,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Fragment, useEffect, useState } from 'react';
 
 export default function MaintenanceList({ auth, maintenances = [], hardwareMaintenances = [], fixedAssets = [], agencies = [], people = [] }) {
+    const rowsPerPage = 10;
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -18,6 +19,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
     const [assetQuery, setAssetQuery] = useState('');
     const [editAssetQuery, setEditAssetQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
         type: '',
         assetCode: '',
@@ -26,9 +28,6 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         agencie: '',
         location: '',
     });
-    const defaultHardwareMaintenanceId = hardwareMaintenances[0]
-        ? String(hardwareMaintenances[0].idhardwaremaintenance)
-        : '';
     const getTodayDate = () => {
         const now = new Date();
         const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
@@ -47,7 +46,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
     };
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        idhardwaremaintenance: defaultHardwareMaintenanceId,
+        idhardwaremaintenance: '',
         type: '',
         idfixedasset: '',
         date: getTodayDate(),
@@ -57,6 +56,12 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         idagencie: '',
         location: '',
         idperson: '',
+        processor: '',
+        ram: '',
+        motherboard: '',
+        graphicscard: '',
+        ssddisk: '',
+        hdddisk: '',
     });
 
     const {
@@ -127,6 +132,8 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         && (item.location ?? '').toLowerCase().includes(filters.location.toLowerCase())
     ));
     const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
+    const totalPages = Math.max(1, Math.ceil(filteredMaintenances.length / rowsPerPage));
+    const paginatedMaintenances = filteredMaintenances.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
     const selectedAsset = fixedAssets.find((item) => String(item.idfixedasset) === String(data.idfixedasset));
     const selectedEditAsset = fixedAssets.find((item) => String(item.idfixedasset) === String(editData.idfixedasset));
@@ -138,6 +145,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         : fixedAssets.filter((item) => assetLabel(item).toLowerCase().includes(editAssetQuery.toLowerCase()));
     const selectedAssetAgency = selectedAsset?.agencie_name ?? '';
     const selectedAssetPerson = assetPersonLabel(selectedAsset);
+    const selectedAssetIsInformatic = Boolean(Number(selectedAsset?.type_is_informatic ?? 0));
     const selectedEditAssetAgency = selectedEditAsset?.agencie_name ?? '';
     const selectedEditAssetPerson = assetPersonLabel(selectedEditAsset);
 
@@ -145,6 +153,12 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         const agencyId = selectedAsset?.idagencie ? String(selectedAsset.idagencie) : '';
         const personId = selectedAsset?.idperson ? String(selectedAsset.idperson) : '';
         const location = selectedAsset?.location ?? '';
+        const processor = selectedAsset?.hardware_processor ?? '';
+        const ram = selectedAsset?.hardware_ram ?? '';
+        const motherboard = selectedAsset?.hardware_motherboard ?? '';
+        const graphicscard = selectedAsset?.hardware_graphicscard ?? '';
+        const ssddisk = selectedAsset?.hardware_ssddisk ?? '';
+        const hdddisk = selectedAsset?.hardware_hdddisk ?? '';
 
         if (data.idagencie !== agencyId) {
             setData('idagencie', agencyId);
@@ -156,6 +170,56 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
         if (data.location !== location) {
             setData('location', location);
+        }
+
+        if (selectedAssetIsInformatic) {
+            if (data.processor !== processor) {
+                setData('processor', processor);
+            }
+
+            if (data.ram !== ram) {
+                setData('ram', ram);
+            }
+
+            if (data.motherboard !== motherboard) {
+                setData('motherboard', motherboard);
+            }
+
+            if (data.graphicscard !== graphicscard) {
+                setData('graphicscard', graphicscard);
+            }
+
+            if (data.ssddisk !== ssddisk) {
+                setData('ssddisk', ssddisk);
+            }
+
+            if (data.hdddisk !== hdddisk) {
+                setData('hdddisk', hdddisk);
+            }
+        } else {
+            if (data.processor !== '') {
+                setData('processor', '');
+            }
+
+            if (data.ram !== '') {
+                setData('ram', '');
+            }
+
+            if (data.motherboard !== '') {
+                setData('motherboard', '');
+            }
+
+            if (data.graphicscard !== '') {
+                setData('graphicscard', '');
+            }
+
+            if (data.ssddisk !== '') {
+                setData('ssddisk', '');
+            }
+
+            if (data.hdddisk !== '') {
+                setData('hdddisk', '');
+            }
         }
     }, [selectedAsset]);
 
@@ -177,11 +241,17 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
         }
     }, [selectedEditAsset]);
 
-    const openCreateModal = () => {
-        if (!data.idhardwaremaintenance && defaultHardwareMaintenanceId) {
-            setData('idhardwaremaintenance', defaultHardwareMaintenanceId);
-        }
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const openCreateModal = () => {
         setData('date', getTodayDate());
 
         setShowCreateModal(true);
@@ -409,10 +479,10 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {filteredMaintenances.length > 0 ? (
-                                            filteredMaintenances.map((item, index) => (
+                                        {paginatedMaintenances.length > 0 ? (
+                                            paginatedMaintenances.map((item, index) => (
                                                 <tr key={item.idmaintenance}>
-                                                    <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
+                                                    <td className="px-4 py-3 text-sm align-top">{(currentPage - 1) * rowsPerPage + index + 1}</td>
                                                     <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatDate(item.date)}</td>
                                                     <td className="px-4 py-3 text-sm align-top break-words">{item.type}</td>
                                                     <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{item.asset_code ?? '-'}</td>
@@ -423,31 +493,33 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                                                     <td className="px-4 py-3 text-sm align-top break-words">{item.user_name ?? '-'}</td>
                                                     <td className="px-4 py-3 text-sm align-top whitespace-nowrap">{formatDate(item.updated_at)}</td>
                                                     <td className="px-4 py-3 text-sm align-top">
-                                                        <div className="flex flex-wrap gap-2">
+                                                        <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
                                                             <a
                                                                 href={route('maintenance.report', item.idmaintenance)}
                                                                 target="_blank"
                                                                 rel="noreferrer"
-                                                                className="inline-flex items-center gap-1 rounded-md bg-slate-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                                                                aria-label="Abrir PDF"
+                                                                title="Abrir PDF"
+                                                                className="inline-flex items-center rounded-md p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                                                             >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                                                    <polyline points="14 2 14 8 20 8" />
-                                                                    <path d="M9 15h6" />
-                                                                    <path d="M9 18h6" />
+                                                                <svg className="h-7 w-7" viewBox="0 0 64 64" aria-hidden="true">
+                                                                    <path d="M13 4h24l14 14v40a4 4 0 0 1-4 4H13a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z" fill="#c9cdd2" />
+                                                                    <path d="M37 4v14h14z" fill="#e2e5e9" />
+                                                                    <rect x="11" y="28" width="42" height="16" rx="3" fill="#ef4b3f" />
+                                                                    <text x="32" y="39" textAnchor="middle" fontSize="10" fontWeight="700" fill="#ffffff" fontFamily="Arial, Helvetica, sans-serif">PDF</text>
                                                                 </svg>
-                                                                PDF
                                                             </a>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => openEditModal(item)}
-                                                                className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                                aria-label="Modificar mantenimiento"
+                                                                title="Modificar mantenimiento"
+                                                                className="inline-flex items-center rounded-md bg-indigo-600 p-1.5 text-white hover:bg-indigo-700"
                                                             >
-                                                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                                                     <path d="M12 20h9" />
                                                                     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                                                                 </svg>
-                                                                Modificar
                                                             </button>
                                                         </div>
                                                     </td>
@@ -465,6 +537,41 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                                     </tbody>
                                 </table>
                             </div>
+
+                            {filteredMaintenances.length > 0 && (
+                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+                                    <div>
+                                        Mostrando {(currentPage - 1) * rowsPerPage + 1}
+                                        {' '}-{' '}
+                                        {Math.min(currentPage * rowsPerPage, filteredMaintenances.length)}
+                                        {' '}de {filteredMaintenances.length} registros
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                        >
+                                            Anterior
+                                        </button>
+
+                                        <span className="text-xs font-semibold uppercase tracking-wider">
+                                            Página {currentPage} de {totalPages}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                        >
+                                            Siguiente
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -595,6 +702,51 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                             <TextInput id="observation" className={compactInputClass} value={data.observation} onChange={(event) => setData('observation', event.target.value)} required />
                             <InputError message={errors.observation} className="mt-2" />
                         </div>
+
+                        {selectedAssetIsInformatic && (
+                            <>
+                                <div className="md:col-span-2 border-t border-gray-200 pt-3 dark:border-gray-700">
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Datos de hardware (editable)</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Se mostrará el hardware actual del activo. Si lo cambias, se guardará histórico y se actualizará el activo.</p>
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="processor" value="Procesador" />
+                                    <TextInput id="processor" className={compactInputClass} value={data.processor} onChange={(event) => setData('processor', event.target.value)} required />
+                                    <InputError message={errors.processor} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="ram" value="RAM" />
+                                    <TextInput id="ram" className={compactInputClass} value={data.ram} onChange={(event) => setData('ram', event.target.value)} required />
+                                    <InputError message={errors.ram} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="motherboard" value="Motherboard" />
+                                    <TextInput id="motherboard" className={compactInputClass} value={data.motherboard} onChange={(event) => setData('motherboard', event.target.value)} />
+                                    <InputError message={errors.motherboard} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="graphicscard" value="Tarjeta gráfica" />
+                                    <TextInput id="graphicscard" className={compactInputClass} value={data.graphicscard} onChange={(event) => setData('graphicscard', event.target.value)} />
+                                    <InputError message={errors.graphicscard} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="ssddisk" value="Disco SSD" />
+                                    <TextInput id="ssddisk" className={compactInputClass} value={data.ssddisk} onChange={(event) => setData('ssddisk', event.target.value)} />
+                                    <InputError message={errors.ssddisk} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="hdddisk" value="Disco HDD" />
+                                    <TextInput id="hdddisk" className={compactInputClass} value={data.hdddisk} onChange={(event) => setData('hdddisk', event.target.value)} />
+                                    <InputError message={errors.hdddisk} className="mt-2" />
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="mt-4 flex justify-end gap-2">

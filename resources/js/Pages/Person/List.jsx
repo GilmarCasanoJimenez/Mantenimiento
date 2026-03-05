@@ -6,16 +6,20 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function PersonList({ auth, persons = [], assignedAssets = {} }) {
+    const rowsPerPage = 10;
+    const assignedAssetsRowsPerPage = 10;
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAssignedAssetsModal, setShowAssignedAssetsModal] = useState(false);
     const [editingPersonId, setEditingPersonId] = useState(null);
     const [selectedPersonForAssets, setSelectedPersonForAssets] = useState(null);
+    const [assignedAssetsPage, setAssignedAssetsPage] = useState(1);
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
         name: '',
         employment: '',
@@ -135,12 +139,14 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
 
     const openAssignedAssetsModal = (person) => {
         setSelectedPersonForAssets(person);
+        setAssignedAssetsPage(1);
         setShowAssignedAssetsModal(true);
     };
 
     const closeAssignedAssetsModal = () => {
         setShowAssignedAssetsModal(false);
         setSelectedPersonForAssets(null);
+        setAssignedAssetsPage(1);
     };
 
     const handleToggleState = (person) => {
@@ -165,6 +171,18 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
         );
     });
     const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
+    const totalPages = Math.max(1, Math.ceil(filteredPersons.length / rowsPerPage));
+    const paginatedPersons = filteredPersons.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const formatDateOnly = (value) => {
         if (!value) {
@@ -226,6 +244,17 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
     const selectedPersonAssets = selectedPersonForAssets
         ? assignedAssets[String(selectedPersonForAssets.idperson)] ?? []
         : [];
+    const assignedAssetsTotalPages = Math.max(1, Math.ceil(selectedPersonAssets.length / assignedAssetsRowsPerPage));
+    const paginatedSelectedPersonAssets = selectedPersonAssets.slice(
+        (assignedAssetsPage - 1) * assignedAssetsRowsPerPage,
+        assignedAssetsPage * assignedAssetsRowsPerPage,
+    );
+
+    useEffect(() => {
+        if (assignedAssetsPage > assignedAssetsTotalPages) {
+            setAssignedAssetsPage(assignedAssetsTotalPages);
+        }
+    }, [assignedAssetsPage, assignedAssetsTotalPages]);
 
     return (
         <AuthenticatedLayout
@@ -338,10 +367,10 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {filteredPersons.length > 0 ? (
-                                                filteredPersons.map((person, index) => (
+                                            {paginatedPersons.length > 0 ? (
+                                                paginatedPersons.map((person, index) => (
                                                     <tr key={person.idperson}>
-                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{index + 1}</td>
+                                                        <td className="whitespace-nowrap px-4 py-3 text-sm">{(currentPage - 1) * rowsPerPage + index + 1}</td>
                                                         <td className="whitespace-nowrap px-4 py-3 text-sm">{person.name}</td>
                                                         <td className="whitespace-nowrap px-4 py-3 text-sm">{person.employment}</td>
                                                         <td className="whitespace-nowrap px-4 py-3 text-sm">{person.user_id ? 'Sí' : 'No'}</td>
@@ -354,13 +383,14 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => openAssignedAssetsModal(person)}
-                                                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                                                                    aria-label="Ver activos asignados"
+                                                                    title="Ver activos asignados"
+                                                                    className="inline-flex items-center rounded-md bg-emerald-600 p-1.5 text-white hover:bg-emerald-700"
                                                                 >
-                                                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                                                         <rect x="3" y="4" width="18" height="14" rx="2" />
                                                                         <path d="M7 20h10" />
                                                                     </svg>
-                                                                    Activos asignados
                                                                 </button>
                                                                 <button
                                                                     type="button"
@@ -403,6 +433,41 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {filteredPersons.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+                                        <div>
+                                            Mostrando {(currentPage - 1) * rowsPerPage + 1}
+                                            {' '}-{' '}
+                                            {Math.min(currentPage * rowsPerPage, filteredPersons.length)}
+                                            {' '}de {filteredPersons.length} registros
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1}
+                                                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                            >
+                                                Anterior
+                                            </button>
+
+                                            <span className="text-xs font-semibold uppercase tracking-wider">
+                                                Pagina {currentPage} de {totalPages}
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                         </div>
                     </div>
                 </div>
@@ -672,9 +737,9 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 text-gray-900 dark:divide-gray-700 dark:text-gray-100">
-                                    {selectedPersonAssets.map((asset, index) => (
+                                    {paginatedSelectedPersonAssets.map((asset, index) => (
                                         <tr key={asset.idfixedasset}>
-                                            <td className="px-4 py-3 text-sm">{index + 1}</td>
+                                            <td className="px-4 py-3 text-sm">{(assignedAssetsPage - 1) * assignedAssetsRowsPerPage + index + 1}</td>
                                             <td className="px-4 py-3 text-sm break-words">{asset.type_name ?? '-'}</td>
                                             <td className="px-4 py-3 text-sm break-words">{asset.brand ?? '-'}</td>
                                             <td className="px-4 py-3 text-sm break-words">{asset.model ?? '-'}</td>
@@ -686,6 +751,39 @@ export default function PersonList({ auth, persons = [], assignedAssets = {} }) 
                                     ))}
                                 </tbody>
                             </table>
+
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+                                <div>
+                                    Mostrando {(assignedAssetsPage - 1) * assignedAssetsRowsPerPage + 1}
+                                    {' '}-{' '}
+                                    {Math.min(assignedAssetsPage * assignedAssetsRowsPerPage, selectedPersonAssets.length)}
+                                    {' '}de {selectedPersonAssets.length} activos
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setAssignedAssetsPage((prev) => Math.max(1, prev - 1))}
+                                        disabled={assignedAssetsPage === 1}
+                                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                    >
+                                        Anterior
+                                    </button>
+
+                                    <span className="text-xs font-semibold uppercase tracking-wider">
+                                        Pagina {assignedAssetsPage} de {assignedAssetsTotalPages}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setAssignedAssetsPage((prev) => Math.min(assignedAssetsTotalPages, prev + 1))}
+                                        disabled={assignedAssetsPage === assignedAssetsTotalPages}
+                                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                    >
+                                        Siguiente
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
 

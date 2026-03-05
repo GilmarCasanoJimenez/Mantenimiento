@@ -37,9 +37,10 @@ export default function Authenticated({ user, header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-            <nav className="bg-white border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
-                    <div className="flex justify-between h-16">
+            <div className="sticky top-0 z-50">
+                <nav className="bg-white border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
+                        <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
                                 <Link href={route('dashboard')}>
@@ -265,67 +266,68 @@ export default function Authenticated({ user, header, children }) {
                                 </svg>
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden dark:bg-gray-800'}>
-                    <div className="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
-                            Inicio
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('fixedasset.list')} active={route().current('fixedasset.list')}>
-                            Lista de Activos
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('itresources.hardware.list')} active={route().current('itresources.hardware.list')}>
-                            Lista de Hardware
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('itresources.hardware.details')} active={route().current('itresources.hardware.details')}>
-                            Detalles
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('itresources.software.list')} active={route().current('itresources.software.list')}>
-                            Lista de Software
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('itresources.software.installed')} active={route().current('itresources.software.installed')}>
-                            Software Instalado
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('maintenance.list')} active={route().current('maintenance.list')}>
-                            Lista de Mantenimientos
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('maintenance.history')} active={route().current('maintenance.history')}>
-                            Historial de Mantenimientos
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('person.list')} active={route().current('person.list')}>
-                            Lista de Funcionarios
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('settings.agencies.list')} active={route().current('settings.agencies.list')}>
-                            Agencias
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('settings.asset-types.list')} active={route().current('settings.asset-types.list')}>
-                            Tipos de Activos
-                        </ResponsiveNavLink>
-                    </div>
-
-                    <div className="pt-4 pb-1 border-t border-gray-200 dark:border-gray-700">
-                        <div className="px-4">
-                            <div className="font-medium text-base text-gray-800 dark:text-gray-100">{displayName}</div>
-                            <div className="font-medium text-sm text-gray-500 dark:text-gray-300">{currentUser?.email ?? ''}</div>
                         </div>
+                    </div>
 
-                        <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>Cambiar contraseña</ResponsiveNavLink>
-                            <ResponsiveNavLink method="post" href={route('logout')} as="button">
-                                Cerrar sesión
+                    <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden dark:bg-gray-800'}>
+                        <div className="pt-2 pb-3 space-y-1">
+                            <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                Inicio
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('fixedasset.list')} active={route().current('fixedasset.list')}>
+                                Lista de Activos
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('itresources.hardware.list')} active={route().current('itresources.hardware.list')}>
+                                Lista de Hardware
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('itresources.hardware.details')} active={route().current('itresources.hardware.details')}>
+                                Detalles
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('itresources.software.list')} active={route().current('itresources.software.list')}>
+                                Lista de Software
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('itresources.software.installed')} active={route().current('itresources.software.installed')}>
+                                Software Instalado
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('maintenance.list')} active={route().current('maintenance.list')}>
+                                Lista de Mantenimientos
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('maintenance.history')} active={route().current('maintenance.history')}>
+                                Historial de Mantenimientos
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('person.list')} active={route().current('person.list')}>
+                                Lista de Funcionarios
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('settings.agencies.list')} active={route().current('settings.agencies.list')}>
+                                Agencias
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('settings.asset-types.list')} active={route().current('settings.asset-types.list')}>
+                                Tipos de Activos
                             </ResponsiveNavLink>
                         </div>
-                    </div>
-                </div>
-            </nav>
 
-            {header && (
-                <header className="bg-white shadow dark:bg-gray-800 dark:text-gray-100">
-                    <div className="mx-auto w-full py-6 px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10 dark:[&_h2]:text-gray-100">{header}</div>
-                </header>
-            )}
+                        <div className="pt-4 pb-1 border-t border-gray-200 dark:border-gray-700">
+                            <div className="px-4">
+                                <div className="font-medium text-base text-gray-800 dark:text-gray-100">{displayName}</div>
+                                <div className="font-medium text-sm text-gray-500 dark:text-gray-300">{currentUser?.email ?? ''}</div>
+                            </div>
+
+                            <div className="mt-3 space-y-1">
+                                <ResponsiveNavLink href={route('profile.edit')}>Cambiar contraseña</ResponsiveNavLink>
+                                <ResponsiveNavLink method="post" href={route('logout')} as="button">
+                                    Cerrar sesión
+                                </ResponsiveNavLink>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                {header && (
+                    <header className="bg-white shadow dark:bg-gray-800 dark:text-gray-100">
+                        <div className="mx-auto w-full py-6 px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10 dark:[&_h2]:text-gray-100">{header}</div>
+                    </header>
+                )}
+            </div>
 
             <main>{children}</main>
         </div>
