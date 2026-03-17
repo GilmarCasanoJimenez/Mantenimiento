@@ -113,6 +113,38 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         }
     }, [informaticCreation, resetInformatic, clearInformaticErrors]);
 
+    useEffect(() => {
+        const agency = agencies.find((item) => String(item.idagencie) === String(data.idagencie));
+        const locations = agency?.locations ?? [];
+
+        if (locations.length === 0) {
+            if (data.location !== '') {
+                setData('location', '');
+            }
+            return;
+        }
+
+        if (!locations.includes(data.location)) {
+            setData('location', locations[0]);
+        }
+    }, [data.idagencie, agencies]);
+
+    useEffect(() => {
+        const agency = agencies.find((item) => String(item.idagencie) === String(editData.idagencie));
+        const locations = agency?.locations ?? [];
+
+        if (locations.length === 0) {
+            if (editData.location !== '') {
+                setEditData('location', '');
+            }
+            return;
+        }
+
+        if (!locations.includes(editData.location)) {
+            setEditData('location', locations[0]);
+        }
+    }, [editData.idagencie, agencies]);
+
     const openCreateModal = () => {
         setShowCreateModal(true);
     };
@@ -319,9 +351,11 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
 
     const selectedType = assetTypes.find((item) => String(item.idtypefixedasset) === String(data.idtypefixedasset));
     const selectedAgency = agencies.find((item) => String(item.idagencie) === String(data.idagencie));
+    const selectedAgencyLocations = selectedAgency?.locations ?? [];
     const selectedPerson = people.find((item) => String(item.idperson) === String(data.idperson));
     const selectedEditType = assetTypes.find((item) => String(item.idtypefixedasset) === String(editData.idtypefixedasset));
     const selectedEditAgency = agencies.find((item) => String(item.idagencie) === String(editData.idagencie));
+    const selectedEditAgencyLocations = selectedEditAgency?.locations ?? [];
     const selectedEditPerson = people.find((item) => String(item.idperson) === String(editData.idperson));
     const filteredTypes = typeQuery.trim() === ''
         ? assetTypes
@@ -692,7 +726,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                         </span>
                                     </Listbox.Button>
                                     <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                                        <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-base text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white sm:text-sm">
+                                        <Listbox.Options className="absolute bottom-full z-50 mb-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-base text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white sm:text-sm">
                                             <Listbox.Option className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-white'}`} value="">
                                                 <span className="block truncate">Selecciona...</span>
                                             </Listbox.Option>
@@ -714,13 +748,19 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
 
                         <div>
                             <InputLabel htmlFor="location" value="Ubicación" />
-                            <TextInput
+                            <select
                                 id="location"
-                                className="mt-1 block w-full"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                                 value={data.location}
                                 onChange={(event) => setData('location', event.target.value)}
                                 required
-                            />
+                                disabled={selectedAgencyLocations.length === 0}
+                            >
+                                <option value="">{selectedAgencyLocations.length === 0 ? 'Sin ubicaciones registradas' : 'Selecciona...'}</option>
+                                {selectedAgencyLocations.map((location) => (
+                                    <option key={location} value={location}>{location}</option>
+                                ))}
+                            </select>
                             <InputError message={errors.location} className="mt-2" />
                         </div>
 
@@ -1004,7 +1044,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                         </span>
                                     </Listbox.Button>
                                     <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                                        <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-base text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white sm:text-sm">
+                                        <Listbox.Options className="absolute bottom-full z-50 mb-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-base text-gray-900 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-slate-900 dark:text-white sm:text-sm">
                                             <Listbox.Option className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-white'}`} value="">
                                                 <span className="block truncate">Selecciona...</span>
                                             </Listbox.Option>
@@ -1022,7 +1062,19 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
 
                         <div>
                             <InputLabel htmlFor="edit_location" value="Ubicación" />
-                            <TextInput id="edit_location" className="mt-1 block w-full" value={editData.location} onChange={(event) => setEditData('location', event.target.value)} required />
+                            <select
+                                id="edit_location"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                value={editData.location}
+                                onChange={(event) => setEditData('location', event.target.value)}
+                                required
+                                disabled={selectedEditAgencyLocations.length === 0}
+                            >
+                                <option value="">{selectedEditAgencyLocations.length === 0 ? 'Sin ubicaciones registradas' : 'Selecciona...'}</option>
+                                {selectedEditAgencyLocations.map((location) => (
+                                    <option key={location} value={location}>{location}</option>
+                                ))}
+                            </select>
                             <InputError message={editErrors.location} className="mt-2" />
                         </div>
 

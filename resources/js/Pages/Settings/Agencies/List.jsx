@@ -16,19 +16,19 @@ export default function AgenciesList({ auth, agencies = [] }) {
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
     const [filters, setFilters] = useState({
         name: '',
-        localitation: '',
+        location: '',
     });
 
     const clearFilters = () => {
         setFilters({
             name: '',
-            localitation: '',
+            location: '',
         });
     };
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         name: '',
-        localitation: '',
+        locations_text: '',
     });
 
     const {
@@ -41,12 +41,24 @@ export default function AgenciesList({ auth, agencies = [] }) {
         clearErrors: clearEditErrors,
     } = useForm({
         name: '',
-        localitation: '',
+        locations_text: '',
     });
+
+    const locationsToText = (agency) => {
+        if (agency?.locations_text) {
+            return agency.locations_text;
+        }
+
+        return (agency?.locations ?? []).join('\n');
+    };
+
+    const locationsToInline = (agency) => {
+        return (agency?.locations ?? []).join(', ');
+    };
 
     const filteredAgencies = agencies.filter((agency) => (
         (agency.name ?? '').toLowerCase().includes(filters.name.toLowerCase())
-        && (agency.localitation ?? '').toLowerCase().includes(filters.localitation.toLowerCase())
+        && locationsToInline(agency).toLowerCase().includes(filters.location.toLowerCase())
     ));
 
     const openCreateModal = () => setShowCreateModal(true);
@@ -60,7 +72,7 @@ export default function AgenciesList({ auth, agencies = [] }) {
     const openEditModal = (agency) => {
         setEditingId(agency.idagencie);
         setEditData('name', agency.name ?? '');
-        setEditData('localitation', agency.localitation ?? '');
+        setEditData('locations_text', locationsToText(agency));
         setShowEditModal(true);
     };
 
@@ -100,11 +112,11 @@ export default function AgenciesList({ auth, agencies = [] }) {
             return;
         }
 
-        const headers = ['#', 'Nombre', 'Ubicación'];
+        const headers = ['#', 'Nombre', 'Ubicaciones'];
         const rows = filteredAgencies.map((agency, index) => [
             String(index + 1),
             agency.name ?? '-',
-            agency.localitation ?? '-',
+            locationsToInline(agency) || '-',
         ].join('\t'));
 
         const text = [headers.join('\t'), ...rows].join('\n');
@@ -183,7 +195,7 @@ export default function AgenciesList({ auth, agencies = [] }) {
                                             <tr>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">#</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Nombre</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Ubicación</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Ubicaciones</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
                                             </tr>
                                             <tr>
@@ -202,8 +214,8 @@ export default function AgenciesList({ auth, agencies = [] }) {
                                                         type="text"
                                                         placeholder="Filtrar ubicación"
                                                         className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.localitation}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, localitation: event.target.value }))}
+                                                        value={filters.location}
+                                                        onChange={(event) => setFilters((prev) => ({ ...prev, location: event.target.value }))}
                                                     />
                                                 </th>
                                                 <th className="px-4 py-2" />
@@ -215,7 +227,7 @@ export default function AgenciesList({ auth, agencies = [] }) {
                                                     <tr key={agency.idagencie}>
                                                         <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
                                                         <td className="px-4 py-3 text-sm align-top break-words">{agency.name}</td>
-                                                        <td className="px-4 py-3 text-sm align-top break-words">{agency.localitation ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-sm align-top break-words">{locationsToInline(agency) || '-'}</td>
                                                         <td className="px-4 py-3 text-sm align-top">
                                                             <button
                                                                 type="button"
@@ -280,14 +292,16 @@ export default function AgenciesList({ auth, agencies = [] }) {
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="localitation" value="Ubicación (opcional)" />
-                            <TextInput
-                                id="localitation"
-                                className="mt-1 block w-full"
-                                value={data.localitation}
-                                onChange={(event) => setData('localitation', event.target.value)}
+                            <InputLabel htmlFor="locations_text" value="Ubicaciones (una por línea)" />
+                            <textarea
+                                id="locations_text"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                rows={4}
+                                value={data.locations_text}
+                                onChange={(event) => setData('locations_text', event.target.value)}
+                                placeholder={'Ejemplo:\nPiso 1\nPiso 2\nArchivo'}
                             />
-                            <InputError message={errors.localitation} className="mt-2" />
+                            <InputError message={errors.locations_text} className="mt-2" />
                         </div>
                     </div>
 
@@ -316,14 +330,16 @@ export default function AgenciesList({ auth, agencies = [] }) {
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="edit_localitation" value="Ubicación (opcional)" />
-                            <TextInput
-                                id="edit_localitation"
-                                className="mt-1 block w-full"
-                                value={editData.localitation}
-                                onChange={(event) => setEditData('localitation', event.target.value)}
+                            <InputLabel htmlFor="edit_locations_text" value="Ubicaciones (una por línea)" />
+                            <textarea
+                                id="edit_locations_text"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                rows={4}
+                                value={editData.locations_text}
+                                onChange={(event) => setEditData('locations_text', event.target.value)}
+                                placeholder={'Ejemplo:\nPiso 1\nPiso 2\nArchivo'}
                             />
-                            <InputError message={editErrors.localitation} className="mt-2" />
+                            <InputError message={editErrors.locations_text} className="mt-2" />
                         </div>
                     </div>
 

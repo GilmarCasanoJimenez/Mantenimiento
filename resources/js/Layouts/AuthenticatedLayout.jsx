@@ -106,7 +106,6 @@ export default function Authenticated({ user, header, children }) {
                                         <Dropdown.Content align="left" width="48">
                                             <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">HARDWARE</div>
                                             <Dropdown.Link href={route('itresources.hardware.list')}>Lista de Hardware</Dropdown.Link>
-                                            <Dropdown.Link href={route('itresources.hardware.details')}>Detalles</Dropdown.Link>
                                             <div className="border-t border-gray-100 dark:border-gray-700" />
                                             <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">SOFTWARE</div>
                                             <Dropdown.Link href={route('itresources.software.list')}>Lista de Software</Dropdown.Link>
@@ -197,6 +196,7 @@ export default function Authenticated({ user, header, children }) {
                                         <Dropdown.Content align="left" width="48">
                                             <Dropdown.Link href={route('settings.agencies.list')}>Agencias</Dropdown.Link>
                                             <Dropdown.Link href={route('settings.asset-types.list')}>Tipos de Activos</Dropdown.Link>
+                                            <Dropdown.Link href={route('settings.import-assets.index')}>Importar Activos</Dropdown.Link>
                                         </Dropdown.Content>
                                     </Dropdown>
                                 </div>
@@ -280,9 +280,6 @@ export default function Authenticated({ user, header, children }) {
                             <ResponsiveNavLink href={route('itresources.hardware.list')} active={route().current('itresources.hardware.list')}>
                                 Lista de Hardware
                             </ResponsiveNavLink>
-                            <ResponsiveNavLink href={route('itresources.hardware.details')} active={route().current('itresources.hardware.details')}>
-                                Detalles
-                            </ResponsiveNavLink>
                             <ResponsiveNavLink href={route('itresources.software.list')} active={route().current('itresources.software.list')}>
                                 Lista de Software
                             </ResponsiveNavLink>
@@ -303,6 +300,9 @@ export default function Authenticated({ user, header, children }) {
                             </ResponsiveNavLink>
                             <ResponsiveNavLink href={route('settings.asset-types.list')} active={route().current('settings.asset-types.list')}>
                                 Tipos de Activos
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('settings.import-assets.index')} active={route().current('settings.import-assets.index')}>
+                                Importar Activos
                             </ResponsiveNavLink>
                         </div>
 

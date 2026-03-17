@@ -18,10 +18,7 @@ class FixedAssetController extends Controller
             ->orderBy('name')
             ->get();
 
-        $agencies = DB::table('agencies')
-            ->select('idagencie', 'name')
-            ->orderBy('name')
-            ->get();
+        $agencies = $this->getAgenciesWithLocations();
 
         $people = DB::table('people')
             ->select('idperson', 'name', 'employment')
@@ -44,10 +41,7 @@ class FixedAssetController extends Controller
             ->orderBy('name')
             ->get();
 
-        $agencies = DB::table('agencies')
-            ->select('idagencie', 'name')
-            ->orderBy('name')
-            ->get();
+        $agencies = $this->getAgenciesWithLocations();
 
         $people = DB::table('people')
             ->select('idperson', 'name', 'employment')
@@ -105,6 +99,43 @@ class FixedAssetController extends Controller
         ]);
     }
 
+    public function hardwareList(): Response
+    {
+        $hardwareAssets = DB::table('fixedasset as fa')
+            ->join('hardware as hw', 'hw.idhardware', '=', 'fa.idhardware')
+            ->leftJoin('typefixedasset as tfa', 'tfa.idtypefixedasset', '=', 'fa.idtypefixedasset')
+            ->leftJoin('agencies as ag', 'ag.idagencie', '=', 'fa.idagencie')
+            ->leftJoin('people as p', 'p.idperson', '=', 'fa.idperson')
+            ->leftJoin('networks as nw', 'nw.idnetwork', '=', 'hw.idnetwork')
+            ->select(
+                'fa.idfixedasset',
+                'fa.asset_code',
+                'fa.brand',
+                'fa.model',
+                'fa.serial',
+                'fa.location',
+                DB::raw('tfa.name as type_name'),
+                DB::raw('ag.name as agencie_name'),
+                DB::raw('p.name as person_name'),
+                'hw.idhardware',
+                'hw.processor',
+                'hw.ram',
+                'hw.motherboard',
+                'hw.graphicscard',
+                'hw.ssddisk',
+                'hw.hdddisk',
+                DB::raw('nw.username as network_username'),
+                DB::raw('nw.hostname as network_hostname'),
+                DB::raw('nw.ipadress as network_ipadress')
+            )
+            ->orderByDesc('fa.idfixedasset')
+            ->get();
+
+        return Inertia::render('ITResources/Hardware/List', [
+            'hardwareAssets' => $hardwareAssets,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -121,6 +152,13 @@ class FixedAssetController extends Controller
             'location' => ['required', 'string', 'max:45'],
             'idperson' => ['required', 'integer', 'exists:people,idperson'],
         ]);
+
+        $allowedLocations = $this->getAgencyLocations((int) $validated['idagencie']);
+        if (! empty($allowedLocations) && ! in_array($validated['location'], $allowedLocations, true)) {
+            return redirect()->back()->withErrors([
+                'location' => 'La ubicación no pertenece a la agencia seleccionada.',
+            ])->withInput();
+        }
 
         $selectedType = DB::table('typefixedasset')
             ->where('idtypefixedasset', $validated['idtypefixedasset'])
@@ -283,6 +321,13 @@ class FixedAssetController extends Controller
             'state' => ['required', 'integer', 'in:0,1'],
         ]);
 
+        $allowedLocations = $this->getAgencyLocations((int) $validated['idagencie']);
+        if (! empty($allowedLocations) && ! in_array($validated['location'], $allowedLocations, true)) {
+            return redirect()->back()->withErrors([
+                'location' => 'La ubicación no pertenece a la agencia seleccionada.',
+            ])->withInput();
+        }
+
         $selectedType = DB::table('typefixedasset')
             ->where('idtypefixedasset', $validated['idtypefixedasset'])
             ->first(['is_informatic']);
@@ -331,5 +376,36 @@ class FixedAssetController extends Controller
             ]);
 
         return redirect()->route('fixedasset.list');
+    }
+
+    private function getAgenciesWithLocations()
+    {
+        $agencies = DB::table('agencies')
+            ->select('idagencie', 'name')
+            ->orderBy('name')
+            ->get();
+
+        $locationsByAgency = DB::table('agency_locations')
+            ->select('idagencie', 'name')
+            ->orderBy('name')
+            ->get()
+            ->groupBy('idagencie');
+
+        return $agencies->map(function ($agency) use ($locationsByAgency) {
+            return [
+                'idagencie' => $agency->idagencie,
+                'name' => $agency->name,
+                'locations' => ($locationsByAgency[$agency->idagencie] ?? collect())->pluck('name')->values()->all(),
+            ];
+        })->values();
+    }
+
+    private function getAgencyLocations(int $agencyId): array
+    {
+        return DB::table('agency_locations')
+            ->where('idagencie', $agencyId)
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
     }
 }

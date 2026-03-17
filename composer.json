@@ -12,6 +12,8 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "shuchkin/simplexlsx": ">=1.1 <2.0",
+        "symfony/string": ">=7.2.0 <8.0",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
@@ -73,6 +75,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2.12"
         }
     },
     "minimum-stability": "stable",

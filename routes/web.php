@@ -51,9 +51,9 @@ Route::get('/it-resources', function () {
     return redirect()->route('itresources.hardware.list');
 })->middleware(['auth', 'verified'])->name('itresources.index');
 
-Route::get('/it-resources/hardware/list', function () {
-    return Inertia::render('ITResources/Hardware/List');
-})->middleware(['auth', 'verified'])->name('itresources.hardware.list');
+Route::get('/it-resources/hardware/list', [FixedAssetController::class, 'hardwareList'])
+    ->middleware(['auth', 'verified'])
+    ->name('itresources.hardware.list');
 
 Route::get('/it-resources/hardware/details', function () {
     return Inertia::render('ITResources/Hardware/Details');
@@ -114,6 +114,14 @@ Route::patch('/configuraciones/agencias/{agencie}', [SettingsController::class, 
 Route::get('/configuraciones/tipos-activos', [SettingsController::class, 'assetTypesIndex'])
     ->middleware(['auth', 'verified'])
     ->name('settings.asset-types.list');
+
+Route::get('/configuraciones/importar-activos', [SettingsController::class, 'importAssetsIndex'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.import-assets.index');
+
+Route::post('/configuraciones/importar-activos', [SettingsController::class, 'importAssetsStore'])
+    ->middleware(['auth', 'verified'])
+    ->name('settings.import-assets.store');
 
 Route::post('/configuraciones/tipos-activos', [SettingsController::class, 'assetTypesStore'])
     ->middleware(['auth', 'verified'])
