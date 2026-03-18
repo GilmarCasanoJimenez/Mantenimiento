@@ -15,9 +15,37 @@
             box-sizing: border-box;
         }
 
+        @font-face {
+            font-family: 'ArialNovaEmbedded';
+            font-style: normal;
+            font-weight: 400;
+            src: url('{{ public_path("fonts/ArialNova.ttf") }}') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'ArialNovaEmbedded';
+            font-style: normal;
+            font-weight: 700;
+            src: url('{{ public_path("fonts/ArialNova-Bold.ttf") }}') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'ArialNovaEmbedded';
+            font-style: italic;
+            font-weight: 400;
+            src: url('{{ public_path("fonts/ArialNova-Italic.ttf") }}') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'ArialNovaEmbedded';
+            font-style: italic;
+            font-weight: 700;
+            src: url('{{ public_path("fonts/ArialNova-BoldItalic.ttf") }}') format('truetype');
+        }
+
         body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
+            font-family: 'ArialNovaEmbedded', sans-serif;
+            font-size: 7px;
             color: #000;
             line-height: 1.2;
         }
@@ -83,6 +111,12 @@
             vertical-align: top;
             word-wrap: break-word;
             font-size: 10px;
+        }
+
+        .resource-grid th,
+        .resource-grid td {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
         .label {
@@ -159,6 +193,16 @@
 
         .bullet-line:last-child {
             margin-bottom: 0;
+        }
+
+        .bullets-sm {
+            min-height: 43px;
+        }
+
+        .maintenance-ip-host td,
+        .maintenance-ip-host th {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
         .bullet-prefix {
@@ -262,12 +306,23 @@
         $item->asset_type_name ? 'Tipo: ' . $item->asset_type_name . '.' : null,
         $item->brand ? 'Marca: ' . $item->brand . '.' : null,
         $item->model ? 'Modelo: ' . $item->model . '.' : null,
-        $item->processor ? 'Procesador: ' . $item->processor . '.' : null,
-        $item->ram !== null ? 'RAM: ' . $formatRam($item->ram) . '.' : null,
-        $item->ssddisk !== null ? 'SSD: ' . $formatStorage($item->ssddisk) . '.' : null,
-        $item->hdddisk !== null ? 'HDD: ' . $formatStorage($item->hdddisk) . '.' : null,
         $item->color ? 'Color: ' . $item->color . '.' : null,
     ])));
+
+    $normalizedAssetType = mb_strtolower(trim((string) ($item->asset_type_name ?? '')));
+    $isPrinterAsset = str_contains($normalizedAssetType, 'impresora')
+        || str_contains($normalizedAssetType, 'fotocopiadora')
+        || str_contains($normalizedAssetType, 'multifuncional');
+
+    if (! $isPrinterAsset) {
+        $description = trim(implode(' ', array_filter([
+            $description !== '' ? $description : null,
+            $item->processor ? 'Procesador: ' . $item->processor . '.' : null,
+            $item->ram !== null ? 'RAM: ' . $formatRam($item->ram) . '.' : null,
+            $item->ssddisk !== null ? 'SSD: ' . $formatStorage($item->ssddisk) . '.' : null,
+            $item->hdddisk !== null ? 'HDD: ' . $formatStorage($item->hdddisk) . '.' : null,
+        ])));
+    }
 
     $logoDataUri = null;
     $canRenderPng = extension_loaded('gd') || function_exists('gd_info');
@@ -332,9 +387,14 @@
         return $items;
     };
 
+    $descriptionWrapWidth = 86;
+    $descriptionWrappedLines = preg_split('/\r\n|\r|\n/', wordwrap($description, $descriptionWrapWidth, PHP_EOL)) ?: [];
+    $descriptionWrappedLines = array_values(array_filter(array_map('trim', $descriptionWrappedLines), static fn ($line) => $line !== ''));
+
     $diagLines = $toFixedRows($diagnosticText !== '' ? [$diagnosticText] : ['-'], 4);
+    $descriptionRows = $toFixedRows(count($descriptionWrappedLines) > 0 ? $descriptionWrappedLines : ['-'], 2);
     $workRows = $toFixedRows(count($workLines) > 0 ? $workLines : ['-'], 6);
-    $obsRows = $toFixedRows(count($obsLines) > 0 ? $obsLines : ['-'], 6);
+    $obsRows = $toFixedRows(count($obsLines) > 0 ? $obsLines : ['-'], 3);
 
     $assetCode = $item->asset_code
         ?? $item->codigo_activo
@@ -353,10 +413,10 @@
     <div class="top-rule"></div>
 
     <div class="main-title">HOJA DE VIDA DEL RECURSO TECNOLÓGICO</div>
-    <div class="main-subtitle">(Equipos de Cómputo)</div>
+    <div class="main-subtitle">{{ $isPrinterAsset ? '(Impresoras)' : '(Equipos de Cómputo)' }}</div>
 
-    <div class="section-title">DATOS DEL EQUIPO</div>
-    <table class="grid">
+    <div class="section-title">DATOS DEL RECURSO</div>
+    <table class="grid resource-grid">
     <colgroup>
         <col style="width: 18%">
         <col style="width: 32%">
@@ -387,23 +447,26 @@
         <td class="label">MODELO:</td>
         <td>{{ $item->model ?: '-' }}</td>
     </tr>
-    <tr>
-        <td class="label">PROCESADOR:</td>
-        <td>{{ $item->processor ?: '-' }}</td>
-        <td class="label">RAM:</td>
-        <td>{{ $formatRam($item->ram) }}</td>
-    </tr>
-    <tr>
-        <td class="label">DISCO SSD:</td>
-        <td>{{ $formatStorage($item->ssddisk) }}</td>
-        <td class="label">DISCO HDD:</td>
-        <td>{{ $formatStorage($item->hdddisk) }}</td>
-    </tr>
+    @if(! $isPrinterAsset)
+        <tr>
+            <td class="label">PROCESADOR:</td>
+            <td>{{ $item->processor ?: '-' }}</td>
+            <td class="label">RAM:</td>
+            <td class="middle">{{ $formatRam($item->ram) }}</td>
+        </tr>
+        <tr>
+            <td class="label">DISCO SSD:</td>
+            <td>{{ $formatStorage($item->ssddisk) }}</td>
+            <td class="label">DISCO HDD:</td>
+            <td>{{ $formatStorage($item->hdddisk) }}</td>
+        </tr>
+    @endif
     <tr>
         <td class="label">DESCRIPCIÓN:</td>
         <td colspan="3" class="line-area-sm">
-            <div class="line-row">{{ $description !== '' ? $description : '-' }}</div>
-            <div class="line-row"></div>
+            @foreach($descriptionRows as $line)
+                <div class="line-row">{{ $line }}</div>
+            @endforeach
         </td>
     </tr>
     </table>
@@ -423,10 +486,10 @@
         <td class="checkbox-cell"><span class="check-box">{{ $isPreventive ? 'X' : '' }}</span></td>
         <td class="label">CORRECTIVO:</td>
         <td class="checkbox-cell"><span class="check-box">{{ $isCorrective ? 'X' : '' }}</span></td>
-        <td class="label">ÁREA:</td>
+        <td class="label center">ÁREA:</td>
         <td class="value-italic">{{ $item->agencie_name ?: '-' }}<br><span class="tiny location-text">{{ $item->location ?: '' }}</span></td>
     </tr>
-    <tr>
+    <tr class="maintenance-ip-host">
         <td class="label">IP:</td>
         <td colspan="2">{{ $item->ipadress ?: '-' }}</td>
         <td class="label">HOSTNAME:</td>
@@ -456,7 +519,7 @@
     </tr>
     <tr>
         <td class="label">OBSERVACIONES:</td>
-        <td colspan="5" class="bullets">
+        <td colspan="5" class="bullets bullets-sm">
             @foreach($obsRows as $line)
                 @if($line !== '')
                     <div class="bullet-line"><span class="bullet-prefix">•</span> {{ $line }}</div>

@@ -359,8 +359,58 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                 <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
-                            <div className="mb-3 flex items-center justify-between gap-2">
-                                <div>
+                            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Mantenimientos registrados</h3>
+                                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                    Revisa y filtra el historial de mantenimientos con paginacion de 10 registros por pagina.
+                                </p>
+                            </div>
+
+                            <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/30 md:grid-cols-3 xl:grid-cols-6">
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar tipo"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.type}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, type: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar código"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.assetCode}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, assetCode: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar activo"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.asset}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, asset: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar responsable"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.person}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, person: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar agencia"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.agencie}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, agencie: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar ubicación"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.location}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, location: event.target.value }))}
+                                />
+
+                                <div className="md:col-span-3 xl:col-span-6">
                                     <button
                                         type="button"
                                         onClick={clearFilters}
@@ -374,6 +424,12 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                                         </svg>
                                         Limpiar filtros
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                    Total filtrados: {filteredMaintenances.length}
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -415,67 +471,6 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
                                             <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Usuario</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Últ. modif.</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
-                                        </tr>
-                                        <tr>
-                                            <th className="px-4 py-2" />
-                                            <th className="px-4 py-2" />
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar tipo"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.type}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, type: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar código"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.assetCode}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, assetCode: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar activo"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.asset}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, asset: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar responsable"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.person}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, person: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar agencia"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.agencie}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, agencie: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filtrar ubicación"
-                                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                    value={filters.location}
-                                                    onChange={(event) => setFilters((prev) => ({ ...prev, location: event.target.value }))}
-                                                />
-                                            </th>
-                                            <th className="px-4 py-2" />
-                                            <th className="px-4 py-2" />
-                                            <th className="px-4 py-2" />
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">

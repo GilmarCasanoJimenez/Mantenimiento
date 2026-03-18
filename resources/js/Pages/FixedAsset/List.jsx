@@ -11,6 +11,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Fragment, useEffect, useState } from 'react';
 
 export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = [], agencies = [], people = [], informaticCreation = null }) {
+    const rowsPerPage = 10;
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -20,24 +21,29 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
     const [editingAssetSnapshot, setEditingAssetSnapshot] = useState(null);
     const [informaticAsset, setInformaticAsset] = useState(null);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [typeQuery, setTypeQuery] = useState('');
     const [personQuery, setPersonQuery] = useState('');
     const [editTypeQuery, setEditTypeQuery] = useState('');
     const [editPersonQuery, setEditPersonQuery] = useState('');
     const [filters, setFilters] = useState({
+        code: '',
         brand: '',
         model: '',
         type: '',
         person: '',
+        agency: '',
         state: '',
     });
 
     const clearFilters = () => {
         setFilters({
+            code: '',
             brand: '',
             model: '',
             type: '',
             person: '',
+            agency: '',
             state: '',
         });
     };
@@ -91,6 +97,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
     } = useForm({
         username: '',
         segment: '',
+        gateway: '',
         ipadress: '',
         hostname: '',
         operativesystem: '',
@@ -241,6 +248,7 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         setIsInformaticModalRequired(false);
         setInformaticData('username', editingAssetSnapshot.network_username ?? '');
         setInformaticData('segment', editingAssetSnapshot.network_segment ?? '');
+        setInformaticData('gateway', editingAssetSnapshot.network_gateway ?? '');
         setInformaticData('ipadress', editingAssetSnapshot.network_ipadress ?? '');
         setInformaticData('hostname', editingAssetSnapshot.network_hostname ?? '');
         setInformaticData('operativesystem', editingAssetSnapshot.network_operativesystem ?? '');
@@ -272,14 +280,29 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
         const stateLabel = asset.state === 1 ? 'Alta' : 'Baja';
 
         return (
+            (asset.asset_code ?? '').toLowerCase().includes(filters.code.toLowerCase())
+            &&
             (asset.brand ?? '').toLowerCase().includes(filters.brand.toLowerCase())
             && (asset.model ?? '').toLowerCase().includes(filters.model.toLowerCase())
             && (asset.type_name ?? '').toLowerCase().includes(filters.type.toLowerCase())
             && (asset.person_name ?? '').toLowerCase().includes(filters.person.toLowerCase())
+            && (asset.agencie_name ?? '').toLowerCase().includes(filters.agency.toLowerCase())
             && (filters.state === '' || stateLabel === filters.state)
         );
     });
     const hasActiveFilters = Object.values(filters).some((value) => (value ?? '').trim() !== '');
+    const totalPages = Math.max(1, Math.ceil(filteredAssets.length / rowsPerPage));
+    const paginatedAssets = filteredAssets.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const formatLastModified = (value) => {
         if (!value) {
@@ -385,8 +408,67 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                 <div className="mx-auto w-full px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800 dark:shadow-gray-900/30">
                         <div className="p-4 text-gray-900 dark:text-gray-100">
-                            <div className="mb-3 flex items-center justify-between gap-2">
-                                <div>
+                            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Activos fijos registrados</h3>
+                                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                    Administra, filtra y revisa el inventario de activos con paginacion de 10 registros por pagina.
+                                </p>
+                            </div>
+
+                            <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/30 md:grid-cols-3 xl:grid-cols-6">
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar código"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.code}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, code: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar tipo"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.type}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, type: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar marca"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.brand}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, brand: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar modelo"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.model}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, model: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar responsable"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.person}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, person: event.target.value }))}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar agencia"
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.agency}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, agency: event.target.value }))}
+                                />
+                                <select
+                                    className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                    value={filters.state}
+                                    onChange={(event) => setFilters((prev) => ({ ...prev, state: event.target.value }))}
+                                >
+                                    <option value="">Todos los estados</option>
+                                    <option value="Alta">Alta</option>
+                                    <option value="Baja">Baja</option>
+                                </select>
+
+                                <div className="md:col-span-3 xl:col-span-6">
                                     <button
                                         type="button"
                                         onClick={clearFilters}
@@ -400,6 +482,12 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                         </svg>
                                         Limpiar filtros
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                    Total filtrados: {filteredAssets.length}
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -444,69 +532,12 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Últ. modif.</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Acciones</th>
                                             </tr>
-                                            <tr>
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Filtrar tipo"
-                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.type}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, type: event.target.value }))}
-                                                    />
-                                                </th>
-                                                <th className="px-4 py-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Filtrar marca"
-                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.brand}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, brand: event.target.value }))}
-                                                    />
-                                                </th>
-                                                <th className="px-4 py-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Filtrar modelo"
-                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.model}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, model: event.target.value }))}
-                                                    />
-                                                </th>
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Filtrar responsable"
-                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.person}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, person: event.target.value }))}
-                                                    />
-                                                </th>
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2">
-                                                    <select
-                                                        className="w-full rounded-md border-gray-300 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                                                        value={filters.state}
-                                                        onChange={(event) => setFilters((prev) => ({ ...prev, state: event.target.value }))}
-                                                    >
-                                                        <option value="">Todos</option>
-                                                        <option value="Alta">Alta</option>
-                                                        <option value="Baja">Baja</option>
-                                                    </select>
-                                                </th>
-                                                <th className="px-4 py-2" />
-                                                <th className="px-4 py-2" />
-                                            </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {filteredAssets.length > 0 ? (
-                                                filteredAssets.map((asset, index) => (
+                                            {paginatedAssets.length > 0 ? (
+                                                paginatedAssets.map((asset, index) => (
                                                     <tr key={asset.idfixedasset}>
-                                                        <td className="px-4 py-3 text-sm align-top">{index + 1}</td>
+                                                        <td className="px-4 py-3 text-sm align-top">{(currentPage - 1) * rowsPerPage + index + 1}</td>
                                                         <td className="px-4 py-3 text-sm align-top break-words">{asset.asset_code ?? '-'}</td>
                                                         <td className="px-4 py-3 text-sm align-top break-words">{asset.type_name ?? '-'}</td>
                                                         <td className="px-4 py-3 text-sm align-top break-words">{asset.brand}</td>
@@ -547,6 +578,41 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {filteredAssets.length > 0 && (
+                                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                                        <div className="mb-2 text-left">
+                                            Mostrando {(currentPage - 1) * rowsPerPage + 1}
+                                            {' '}-{' '}
+                                            {Math.min(currentPage * rowsPerPage, filteredAssets.length)}
+                                            {' '}de {filteredAssets.length} registros
+                                        </div>
+
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1}
+                                                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                            >
+                                                Anterior
+                                            </button>
+
+                                            <span className="text-xs font-semibold uppercase tracking-wider">
+                                                Pagina {currentPage} de {totalPages}
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                         </div>
                     </div>
                 </div>
@@ -859,6 +925,12 @@ export default function FixedAssetList({ auth, fixedAssets = [], assetTypes = []
                             <InputLabel htmlFor="network_segment" value="Segmento" />
                             <TextInput id="network_segment" className="mt-1 block w-full" value={informaticData.segment} onChange={(event) => setInformaticData('segment', event.target.value)} required />
                             <InputError message={informaticErrors.segment} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="network_gateway" value="Gateway" />
+                            <TextInput id="network_gateway" className="mt-1 block w-full" value={informaticData.gateway} onChange={(event) => setInformaticData('gateway', event.target.value)} required />
+                            <InputError message={informaticErrors.gateway} className="mt-2" />
                         </div>
 
                         <div>

@@ -3,11 +3,13 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { PageCard, PageContainer } from '@/Components/PageSection';
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function List({ hardwareAssets = [] }) {
+    const rowsPerPage = 10;
     const [showCopyModal, setShowCopyModal] = useState(false);
     const [copiedRowsCount, setCopiedRowsCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
         person: '',
         agency: '',
@@ -21,6 +23,18 @@ export default function List({ hardwareAssets = [] }) {
             && (item.processor ?? '').toLowerCase().includes(filters.processor.toLowerCase())
         );
     });
+    const totalPages = Math.max(1, Math.ceil(filteredAssets.length / rowsPerPage));
+    const paginatedAssets = filteredAssets.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     const clearFilters = () => {
         setFilters({
@@ -163,7 +177,7 @@ export default function List({ hardwareAssets = [] }) {
                                     </tr>
                                 )}
 
-                                {filteredAssets.map((item) => (
+                                {paginatedAssets.map((item) => (
                                     <tr key={item.idfixedasset} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
                                         <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
                                             <div className="font-semibold">{item.asset_code ?? `Activo #${item.idfixedasset}`}</div>
@@ -193,6 +207,41 @@ export default function List({ hardwareAssets = [] }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {filteredAssets.length > 0 && (
+                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                            <div className="mb-2 text-left">
+                                Mostrando {(currentPage - 1) * rowsPerPage + 1}
+                                {' '}-{' '}
+                                {Math.min(currentPage * rowsPerPage, filteredAssets.length)}
+                                {' '}de {filteredAssets.length} registros
+                            </div>
+
+                            <div className="flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                >
+                                    Anterior
+                                </button>
+
+                                <span className="text-xs font-semibold uppercase tracking-wider">
+                                    Pagina {currentPage} de {totalPages}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                >
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </PageCard>
             </PageContainer>
 

@@ -76,6 +76,7 @@ class FixedAssetController extends Controller
                 DB::raw('p.name as person_name'),
                 DB::raw('nw.username as network_username'),
                 DB::raw('nw.segment as network_segment'),
+                DB::raw('nw.gateway as network_gateway'),
                 DB::raw('nw.ipadress as network_ipadress'),
                 DB::raw('nw.hostname as network_hostname'),
                 DB::raw('nw.operativesystem as network_operativesystem'),
@@ -125,6 +126,8 @@ class FixedAssetController extends Controller
                 'hw.ssddisk',
                 'hw.hdddisk',
                 DB::raw('nw.username as network_username'),
+                DB::raw('nw.segment as network_segment'),
+                DB::raw('nw.gateway as network_gateway'),
                 DB::raw('nw.hostname as network_hostname'),
                 DB::raw('nw.ipadress as network_ipadress')
             )
@@ -216,9 +219,10 @@ class FixedAssetController extends Controller
 
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:75'],
-            'segment' => ['required', 'string', 'max:15'],
-            'ipadress' => ['required', 'string', 'max:15'],
-            'hostname' => ['required', 'string', 'max:14'],
+            'segment' => ['required', 'string', 'max:45'],
+            'gateway' => ['required', 'string', 'max:45'],
+            'ipadress' => ['required', 'string', 'max:45'],
+            'hostname' => ['required', 'string', 'max:75'],
             'operativesystem' => ['required', 'string', 'max:75'],
             'antivirus' => ['required', 'string', 'max:75'],
             'processor' => ['required', 'string', 'max:45'],
@@ -233,6 +237,7 @@ class FixedAssetController extends Controller
             $networkPayload = [
                 'username' => $validated['username'],
                 'segment' => $validated['segment'],
+                'gateway' => $validated['gateway'],
                 'ipadress' => $validated['ipadress'],
                 'hostname' => $validated['hostname'],
                 'operativesystem' => $validated['operativesystem'],

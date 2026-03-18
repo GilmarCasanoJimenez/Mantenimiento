@@ -377,9 +377,10 @@ class SettingsController extends Controller
             $color = mb_substr((string) ($row['color'] ?? 'Negro'), 0, 45);
 
             $networkUsername = mb_substr($this->normalizeTechValue((string) ($row['network_username'] ?? '')), 0, 75);
-            $networkSegment = mb_substr($this->normalizeTechValue((string) ($row['network_segment'] ?? '')), 0, 11);
-            $networkIp = mb_substr($this->normalizeTechValue((string) ($row['network_ip'] ?? '')), 0, 11);
-            $networkHostname = mb_substr($this->normalizeTechValue((string) ($row['network_hostname'] ?? '')), 0, 14);
+            $networkSegment = mb_substr($this->normalizeTechValue((string) ($row['network_segment'] ?? '')), 0, 45);
+            $networkGateway = mb_substr($this->normalizeTechValue((string) ($row['network_gateway'] ?? '')), 0, 45);
+            $networkIp = mb_substr($this->normalizeTechValue((string) ($row['network_ip'] ?? '')), 0, 45);
+            $networkHostname = mb_substr($this->normalizeTechValue((string) ($row['network_hostname'] ?? '')), 0, 75);
             $operativeSystem = mb_substr($this->normalizeTechValue((string) ($row['operativesystem'] ?? '')), 0, 75);
             $antivirus = mb_substr($this->normalizeTechValue((string) ($row['antivirus'] ?? '')), 0, 75);
 
@@ -388,8 +389,8 @@ class SettingsController extends Controller
             $motherboard = mb_substr($this->normalizeTechValue((string) ($row['motherboard'] ?? '')), 0, 45);
             $graphicsCard = mb_substr($this->normalizeTechValue((string) ($row['graphicscard'] ?? '')), 0, 45);
             [$diskSsdParsed, $diskHddParsed] = $this->extractDiskValues((string) ($row['disk'] ?? ''));
-            $ssdDisk = mb_substr($this->normalizeTechValue((string) ($row['ssddisk'] ?? $diskSsdParsed)), 0, 45);
-            $hddDisk = mb_substr($this->normalizeTechValue((string) ($row['hdddisk'] ?? $diskHddParsed)), 0, 45);
+            $ssdDisk = mb_substr($this->sanitizeDiskValue((string) ($row['ssddisk'] ?? $diskSsdParsed)), 0, 45);
+            $hddDisk = mb_substr($this->sanitizeDiskValue((string) ($row['hdddisk'] ?? $diskHddParsed)), 0, 45);
             if ($color === '') {
                 $color = 'Negro';
             }
@@ -552,6 +553,7 @@ class SettingsController extends Controller
                 $networkId = (int) DB::table('networks')->insertGetId([
                     'username' => $networkUsername !== '' ? $networkUsername : '-',
                     'segment' => $networkSegment !== '' ? $networkSegment : '-',
+                    'gateway' => $networkGateway !== '' ? $networkGateway : '-',
                     'ipadress' => $networkIp !== '' ? $networkIp : '-',
                     'hostname' => $networkHostname !== '' ? $networkHostname : '-',
                     'operativesystem' => $operativeSystem !== '' ? $operativeSystem : '-',
@@ -1080,6 +1082,19 @@ class SettingsController extends Controller
         return $value;
     }
 
+    private function sanitizeDiskValue(string $value): string
+    {
+        $normalized = $this->normalizeTechValue($value);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $withoutPrefix = preg_replace('/^\s*(ssd|hdd|hhd)\s*[:\-]?\s*/i', '', $normalized) ?? $normalized;
+        $withoutPrefix = trim($withoutPrefix);
+
+        return $withoutPrefix !== '' ? $withoutPrefix : $normalized;
+    }
+
     private function extractDiskValues(string $disk): array
     {
         $disk = trim($disk);
@@ -1099,22 +1114,22 @@ class SettingsController extends Controller
 
             $normalized = mb_strtolower($part);
             if ($ssd === '' && str_contains($normalized, 'ssd')) {
-                $ssd = $part;
+                $ssd = $this->sanitizeDiskValue($part);
                 continue;
             }
 
             if ($hdd === '' && (str_contains($normalized, 'hdd') || str_contains($normalized, 'hhd'))) {
-                $hdd = $part;
+                $hdd = $this->sanitizeDiskValue($part);
                 continue;
             }
 
             if ($ssd === '') {
-                $ssd = $part;
+                $ssd = $this->sanitizeDiskValue($part);
                 continue;
             }
 
             if ($hdd === '') {
-                $hdd = $part;
+                $hdd = $this->sanitizeDiskValue($part);
             }
         }
 

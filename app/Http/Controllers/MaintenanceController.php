@@ -328,6 +328,12 @@ class MaintenanceController extends Controller
         $isPreventive = str_contains($type, 'prevent');
         $isCorrective = str_contains($type, 'correct') || ! $isPreventive;
 
+        $dompdfFontsPath = storage_path('fonts');
+
+        if (! is_dir($dompdfFontsPath)) {
+            @mkdir($dompdfFontsPath, 0755, true);
+        }
+
         return Pdf::loadView('pdf.maintenance-record', [
             'item' => $item,
             'isPreventive' => $isPreventive,
