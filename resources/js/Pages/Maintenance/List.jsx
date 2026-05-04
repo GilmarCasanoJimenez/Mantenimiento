@@ -110,7 +110,7 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
     const assetLabel = (item) => `${item.asset_code ?? item.idfixedasset} - ${item.type_name ?? '-'} - ${item.brand ?? '-'} ${item.model ?? ''}`;
     const personLabel = (item) => `${item.name} - ${item.employment}`;
-    const maintenanceTypes = ['PREVENTIVO', 'CORRECTIVO'];
+    const maintenanceTypes = ['PREVENTIVO', 'CORRECTIVO', 'EXTERNO'];
     const assetPersonLabel = (item) => {
         if (!item) {
             return '';

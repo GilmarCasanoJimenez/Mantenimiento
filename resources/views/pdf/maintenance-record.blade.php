@@ -315,8 +315,9 @@
         || str_contains($normalizedAssetType, 'fotocopiadora')
         || str_contains($normalizedAssetType, 'multifuncional');
     $isUpsAsset = str_contains($normalizedAssetType, 'ups');
+    $isMonitorAsset = str_contains($normalizedAssetType, 'monitor');
 
-    if (! $isPrinterAsset && ! $isUpsAsset) {
+    if (! $isPrinterAsset && ! $isUpsAsset && ! $isMonitorAsset) {
         $description = trim(implode(' ', array_filter([
             $description !== '' ? $description : null,
             $item->processor ? 'Procesador: ' . $item->processor . '.' : null,
@@ -408,6 +409,9 @@
         ?? $item->code
         ?? $item->idfixedasset
         ?? '-';
+
+    $normalizedMaintenanceType = mb_strtolower(trim((string) ($item->type ?? '')));
+    $isExternalMaintenance = str_contains($normalizedMaintenanceType, 'extern');
 @endphp
 
 <div class="sheet">
@@ -426,6 +430,8 @@
             (Impresoras)
         @elseif($isUpsAsset)
             (UPS)
+        @elseif($isMonitorAsset)
+            (Monitor)
         @else
             (Equipos de Cómputo)
         @endif
@@ -463,7 +469,7 @@
         <td class="label">MODELO:</td>
         <td>{{ $item->model ?: '-' }}</td>
     </tr>
-    @if(! $isPrinterAsset && ! $isUpsAsset)
+    @if(! $isPrinterAsset && ! $isUpsAsset && ! $isMonitorAsset)
         <tr>
             <td class="label">PROCESADOR:</td>
             <td>{{ $item->processor ?: '-' }}</td>
@@ -553,14 +559,18 @@
                 <td style="width:35%;">
                     <div class="sign-line sign-line-solid">
                         RESPONSABLE DE MANTENIMIENTO
-                        <div class="sign-sub">{{ $item->maintenance_user_name ?: 'UNIDAD DE SISTEMAS' }}</div>
+                        <div class="sign-sub">
+                            {{ $isExternalMaintenance ? 'EXTERNO' : ($item->maintenance_user_name ?: 'UNIDAD DE SISTEMAS') }}
+                        </div>
                     </div>
                 </td>
                 <td style="width:30%;"></td>
                 <td style="width:35%;">
                     <div class="sign-line">
-                        RESPONSABLE DEL ACTIVO
-                        <div class="sign-sub">{{ $item->responsible_name ?: '-' }}</div>
+                        {{ $isExternalMaintenance ? 'RECEPCIÓN DEL ACTIVO' : 'RESPONSABLE DEL ACTIVO' }}
+                        <div class="sign-sub">
+                            {{ $isExternalMaintenance ? ($item->maintenance_user_name ?: 'UNIDAD DE SISTEMAS') : ($item->responsible_name ?: '-') }}
+                        </div>
                     </div>
                 </td>
             </tr>
