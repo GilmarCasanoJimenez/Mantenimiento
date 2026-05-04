@@ -13,10 +13,10 @@ class MaintenanceDemoSeeder extends Seeder
 
         if (empty($hardwareIds)) {
             $hardwareRows = [
-                ['processor' => 'Intel Core i5 10400', 'ram' => 0.08, 'motherboard' => 'ASUS PRIME H510M', 'graphiccard' => 'Intel UHD', 'ssddisk' => 256.00, 'hdddisk' => 1000.00],
-                ['processor' => 'Intel Core i7 10700', 'ram' => 0.16, 'motherboard' => 'Gigabyte B460M', 'graphiccard' => 'NVIDIA GTX 1650', 'ssddisk' => 512.00, 'hdddisk' => 1000.00],
-                ['processor' => 'AMD Ryzen 5 5600G', 'ram' => 0.16, 'motherboard' => 'MSI B550M PRO', 'graphiccard' => 'Radeon Vega', 'ssddisk' => 512.00, 'hdddisk' => 0.00],
-                ['processor' => 'Intel Core i3 10100', 'ram' => 0.08, 'motherboard' => 'ASRock H410M', 'graphiccard' => 'Intel UHD', 'ssddisk' => 240.00, 'hdddisk' => 500.00],
+                ['processor' => 'Intel Core i5 10400', 'ram' => '8 GB', 'motherboard' => 'ASUS PRIME H510M', 'graphicscard' => 'Intel UHD', 'ssddisk' => '256 GB', 'hdddisk' => '1 TB'],
+                ['processor' => 'Intel Core i7 10700', 'ram' => '16 GB', 'motherboard' => 'Gigabyte B460M', 'graphicscard' => 'NVIDIA GTX 1650', 'ssddisk' => '512 GB', 'hdddisk' => '1 TB'],
+                ['processor' => 'AMD Ryzen 5 5600G', 'ram' => '16 GB', 'motherboard' => 'MSI B550M PRO', 'graphicscard' => 'Radeon Vega', 'ssddisk' => '512 GB', 'hdddisk' => null],
+                ['processor' => 'Intel Core i3 10100', 'ram' => '8 GB', 'motherboard' => 'ASRock H410M', 'graphicscard' => 'Intel UHD', 'ssddisk' => '240 GB', 'hdddisk' => '500 GB'],
             ];
 
             foreach ($hardwareRows as $row) {

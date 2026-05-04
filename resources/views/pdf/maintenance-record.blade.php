@@ -309,12 +309,14 @@
         $item->color ? 'Color: ' . $item->color . '.' : null,
     ])));
 
+
     $normalizedAssetType = mb_strtolower(trim((string) ($item->asset_type_name ?? '')));
     $isPrinterAsset = str_contains($normalizedAssetType, 'impresora')
         || str_contains($normalizedAssetType, 'fotocopiadora')
         || str_contains($normalizedAssetType, 'multifuncional');
+    $isUpsAsset = str_contains($normalizedAssetType, 'ups');
 
-    if (! $isPrinterAsset) {
+    if (! $isPrinterAsset && ! $isUpsAsset) {
         $description = trim(implode(' ', array_filter([
             $description !== '' ? $description : null,
             $item->processor ? 'Procesador: ' . $item->processor . '.' : null,
@@ -351,7 +353,9 @@
         }
     }
 
-    $diagnosticText = trim((string) ($item->diagnostic ?? ''));
+    $diagnosticRaw = trim((string) ($item->diagnostic ?? ''));
+    $diagnosticText = preg_replace('/\s+/u', ' ', $diagnosticRaw) ?? $diagnosticRaw;
+    $diagnosticText = trim($diagnosticText);
     $workText = trim((string) ($item->workdone ?? ''));
     $obsText = trim((string) ($item->observation ?? ''));
 
@@ -388,10 +392,13 @@
     };
 
     $descriptionWrapWidth = 86;
+    $diagnosticWrapWidth = 115;
+    $diagnosticWrappedLines = preg_split('/\r\n|\r|\n/', wordwrap($diagnosticText, $diagnosticWrapWidth, PHP_EOL)) ?: [];
+    $diagnosticWrappedLines = array_values(array_filter(array_map('trim', $diagnosticWrappedLines), static fn ($line) => $line !== ''));
     $descriptionWrappedLines = preg_split('/\r\n|\r|\n/', wordwrap($description, $descriptionWrapWidth, PHP_EOL)) ?: [];
     $descriptionWrappedLines = array_values(array_filter(array_map('trim', $descriptionWrappedLines), static fn ($line) => $line !== ''));
 
-    $diagLines = $toFixedRows($diagnosticText !== '' ? [$diagnosticText] : ['-'], 4);
+    $diagLines = $toFixedRows(count($diagnosticWrappedLines) > 0 ? $diagnosticWrappedLines : ['-'], 4);
     $descriptionRows = $toFixedRows(count($descriptionWrappedLines) > 0 ? $descriptionWrappedLines : ['-'], 2);
     $workRows = $toFixedRows(count($workLines) > 0 ? $workLines : ['-'], 6);
     $obsRows = $toFixedRows(count($obsLines) > 0 ? $obsLines : ['-'], 3);
@@ -412,8 +419,17 @@
 
     <div class="top-rule"></div>
 
+
     <div class="main-title">HOJA DE VIDA DEL RECURSO TECNOLÓGICO</div>
-    <div class="main-subtitle">{{ $isPrinterAsset ? '(Impresoras)' : '(Equipos de Cómputo)' }}</div>
+    <div class="main-subtitle">
+        @if($isPrinterAsset)
+            (Impresoras)
+        @elseif($isUpsAsset)
+            (UPS)
+        @else
+            (Equipos de Cómputo)
+        @endif
+    </div>
 
     <div class="section-title">DATOS DEL RECURSO</div>
     <table class="grid resource-grid">
@@ -447,7 +463,7 @@
         <td class="label">MODELO:</td>
         <td>{{ $item->model ?: '-' }}</td>
     </tr>
-    @if(! $isPrinterAsset)
+    @if(! $isPrinterAsset && ! $isUpsAsset)
         <tr>
             <td class="label">PROCESADOR:</td>
             <td>{{ $item->processor ?: '-' }}</td>

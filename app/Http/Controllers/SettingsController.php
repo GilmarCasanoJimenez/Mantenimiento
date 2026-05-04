@@ -1056,7 +1056,31 @@ class SettingsController extends Controller
             return null;
         }
 
-        $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y'];
+        $value = str_replace(["\u{00A0}", "\u{2007}", "\u{202F}"], ' ', $value);
+        $value = trim($value);
+
+        if (is_numeric($value)) {
+            $numericValue = (float) $value;
+
+            // Excel serial date (common in XLSX/CSV exports).
+            if ($numericValue >= 1000 && $numericValue <= 60000) {
+                return Carbon::create(1899, 12, 30)
+                    ->addDays((int) floor($numericValue))
+                    ->format('Y-m-d');
+            }
+
+            // Unix timestamp in seconds.
+            if ($numericValue >= 1_000_000_000 && $numericValue <= 4_102_444_800) {
+                return Carbon::createFromTimestamp((int) $numericValue)->format('Y-m-d');
+            }
+
+            // Unix timestamp in milliseconds.
+            if ($numericValue >= 1_000_000_000_000 && $numericValue <= 4_102_444_800_000) {
+                return Carbon::createFromTimestampMs((int) $numericValue)->format('Y-m-d');
+            }
+        }
+
+        $formats = ['Y-m-d', 'Y/m/d', 'd/m/Y', 'd-m-Y', 'd.m.Y', 'd/m/y', 'd-m-y', 'm/d/Y', 'm-d-Y'];
 
         foreach ($formats as $format) {
             try {
@@ -1067,6 +1091,12 @@ class SettingsController extends Controller
             } catch (\Throwable) {
                 // Continue trying with other formats.
             }
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Throwable) {
+            // Ignore invalid/unknown dates.
         }
 
         return null;

@@ -688,7 +688,14 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="workdone" value="Trabajo realizado" />
-                            <TextInput id="workdone" className={compactInputClass} value={data.workdone} onChange={(event) => setData('workdone', event.target.value)} required />
+                            <textarea
+                                id="workdone"
+                                className={`${compactInputClass} rounded-md border-gray-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100`}
+                                rows={3}
+                                value={data.workdone}
+                                onChange={(event) => setData('workdone', event.target.value)}
+                                required
+                            />
                             <InputError message={errors.workdone} className="mt-2" />
                         </div>
 
@@ -864,7 +871,14 @@ export default function MaintenanceList({ auth, maintenances = [], hardwareMaint
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="edit_workdone" value="Trabajo realizado" />
-                            <TextInput id="edit_workdone" className={compactInputClass} value={editData.workdone} onChange={(event) => setEditData('workdone', event.target.value)} required />
+                            <textarea
+                                id="edit_workdone"
+                                className={`${compactInputClass} rounded-md border-gray-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100`}
+                                rows={3}
+                                value={editData.workdone}
+                                onChange={(event) => setEditData('workdone', event.target.value)}
+                                required
+                            />
                             <InputError message={editErrors.workdone} className="mt-2" />
                         </div>
 
